@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+- **Capabilities.** An ability now records what it lets you *do* (`provides`),
+  independently of the entry granting it, and the Mechanics tab shows them.
+  A prerequisite written against a capability is met by any ability providing
+  it, and holding one capability twice does not stack. Requires acks-lib >= 0.3.0.
+
 ## 0.2.1
 
 - **The ACKS Ability sheet is now the default** for ability items. It registered

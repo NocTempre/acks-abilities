@@ -11,6 +11,8 @@
   "ACKS-ABILITIES.mech.powerValueHint": "How many custom powers this counts as when building a class. Blank for proficiencies.",
   "ACKS-ABILITIES.mech.requires": "Requires",
   "ACKS-ABILITIES.mech.deprecated": "Removed in ACKS II",
+  "ACKS-ABILITIES.mech.provides": "Provides",
+  "ACKS-ABILITIES.mech.providesHint": "What this ability lets you do, named independently of this entry. A prerequisite written against a capability is met by any ability providing it — and holding the same capability twice does not stack.",
   "ACKS-ABILITIES.mech.effects": "Effects",
   "ACKS-ABILITIES.mech.noEffects": "No structured effects. The full text streams from your own book when connected.",
   "ACKS-ABILITIES.mech.defenses": "Immunities & Resistances",

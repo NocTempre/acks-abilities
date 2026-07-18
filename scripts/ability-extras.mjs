@@ -13,7 +13,7 @@
  * layout the toolchain assumes; resolves under /modules/ at runtime).
  */
 import { MODULE_ID, FLAG_EXTRAS } from "./constants.mjs";
-import { num, str, bool, choice, effectsField, defensesField } from "../../acks-lib/scripts/fields.mjs";
+import { num, str, bool, choice, refList, effectsField, defensesField } from "../../acks-lib/scripts/fields.mjs";
 import { ABILITY_CATEGORIES, CONVERSION_STATUS } from "../../acks-lib/scripts/vocab.mjs";
 
 export default class AbilityExtras extends foundry.abstract.DataModel {
@@ -40,6 +40,13 @@ export default class AbilityExtras extends foundry.abstract.DataModel {
       // granted and shown), a pointer to where its text is, and — because the two
       // are the same capability — a non-stacking relation to the target.
       aliasOf: str(),
+      // What this ability lets you DO, named independently of this entry, as
+      // acks-lib `kw:` capability tokens. A prerequisite written against a
+      // capability is satisfied by any ability providing it — which is what
+      // makes a gate survive the books printing the same capability as a
+      // proficiency, a skill, a class power and an alias. Two abilities sharing
+      // a capability are the same capability twice, so they do not stack.
+      provides: refList(),
       requires: str(), // prerequisite marker (detail lives in the lazy description)
       // --- A pick-one branch (Combat Trickery maneuver, Elementalism element…) ---
       choice: new SchemaField({

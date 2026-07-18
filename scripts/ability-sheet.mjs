@@ -163,6 +163,16 @@ export function createAbilitySheet(Base) {
       // An alias is a real ability whose text lives under another entry. Say so
       // — otherwise the two look like accidental duplicates.
       context.aliasOf = extras.aliasOf ? refName(extras.aliasOf) : null;
+      // Capabilities read better as the thing they stand for than as raw
+      // tokens: "kw:sensingevil" is the Sensing Evil capability.
+      context.provides = (extras.provides ?? []).map((token) => {
+        const slug = String(token).replace(/^kw:/, "");
+        const owner = game.items?.find?.((i) => {
+          const id = i.getFlag?.("acks-content", "cookbook")?.id;
+          return id && !i.getFlag("acks-abilities", "extras")?.aliasOf && V.capabilityForId?.(id) === token;
+        });
+        return { token, label: owner?.name ?? slug };
+      });
       return context;
     }
 

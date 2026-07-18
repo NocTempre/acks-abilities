@@ -67,6 +67,16 @@
     </div>
   </fieldset>
 
+  {{#if provides.length}}
+    <fieldset>
+      <legend>{{localize "ACKS-ABILITIES.mech.provides"}}</legend>
+      <p class="hint">{{localize "ACKS-ABILITIES.mech.providesHint"}}</p>
+      <ul class="acks-abilities-caps">
+        {{#each provides}}<li><code data-tooltip="{{this.token}}">{{this.label}}</code></li>{{/each}}
+      </ul>
+    </fieldset>
+  {{/if}}
+
   <fieldset>
     <legend>{{localize "ACKS-ABILITIES.mech.effects"}}</legend>
     {{#if effectRows.length}}
