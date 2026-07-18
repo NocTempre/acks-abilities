@@ -18,6 +18,15 @@
           "minimum": "14"
         }
       }
+    ],
+    "requires": [
+      {
+        "id": "acks-lib",
+        "type": "module",
+        "compatibility": {
+          "minimum": "0.1.0"
+        }
+      }
     ]
   },
   "manifest": "https://github.com/NocTempre/acks-abilities/releases/latest/download/module.json",

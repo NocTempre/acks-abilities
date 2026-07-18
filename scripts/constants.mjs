@@ -10,3 +10,8 @@ export const LANG_PREFIX = "ACKS-ABILITIES";
  */
 export const MODULE_KEY = "acksAbil";
 export const NAMESPACE = "acksAbilities";
+
+/** The core `ability` item type this module extends (proficiencies/powers/skills). */
+export const ABILITY_TYPE = "ability";
+/** Flag key under flags["acks-abilities"] holding the extended effect model. */
+export const FLAG_EXTRAS = "extras";
