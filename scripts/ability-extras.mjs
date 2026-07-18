@@ -31,8 +31,15 @@ export default class AbilityExtras extends foundry.abstract.DataModel {
       deprecated: bool(), // "removed from ACKS II" — still ingested, just flagged
       replacedBy: str(), // what supersedes it (a def id), so references can redirect
       // Set when the ability arrived from a converted/legacy source: `deleted`
-      // (removed on purpose) reads as a caution, `absent` (merely omitted) as info.
+      // (removed on purpose) reads as a caution, `absent` (merely omitted) as
+      // info, `renamed` as a note. All three are surfaced.
       conversionStatus: choice(CONVERSION_STATUS),
+      conversionFrom: str(), // the PRE-conversion name — what the older source called it
+      // An alias is its OWN ability, not a redirect: the books list a name whose
+      // text lives under another entry. It gets a real item (so it can be picked,
+      // granted and shown), a pointer to where its text is, and — because the two
+      // are the same capability — a non-stacking relation to the target.
+      aliasOf: str(),
       requires: str(), // prerequisite marker (detail lives in the lazy description)
       // --- A pick-one branch (Combat Trickery maneuver, Elementalism element…) ---
       choice: new SchemaField({

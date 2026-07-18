@@ -22,6 +22,11 @@ function describeEffect(e, V) {
     if (v.kind === "breakpoints" && v.breakpoints?.length) {
       return v.breakpoints.map((b) => `${b.value} @${b.atLevel}`).join(", ");
     }
+    // A conditional ladder reads off a scale rather than level, so name it.
+    if (v.kind === "conditional" && v.breakpoints?.length) {
+      const scale = V?.VALUE_SCALES?.[v.on]?.label ?? v.on;
+      return v.breakpoints.map((b) => `${b.value} @${scale} ${b.atLevel}+`).join(", ");
+    }
     return v.flat ?? null;
   };
   const n = lv(e.value);
@@ -63,6 +68,18 @@ function describeEffect(e, V) {
       return { kind: label(V.EFFECT_TYPES, e.type), text: `${e.action || ""} ${label(V.RESOURCE_KINDS, e.resource)}${e.amount ? ` ×${e.amount}` : ""}`.trim() };
     case "economic":
       return { kind: label(V.EFFECT_TYPES, e.type), text: `${e.amount ?? ""}${e.unit || ""}${e.period ? ` per ${e.period}` : ""}`.trim() || "—" };
+    case "reroll": {
+      const total = V.rerollTotal?.(e) ?? 2;
+      const what = e.forWhat || label(V.MODIFIER_TARGETS, e.target) || "the roll";
+      return { kind: label(V.EFFECT_TYPES, e.type), text: `roll ${what} ${total}× — ${label(V.REROLL_KEEP, e.keep) || "keep the better"}` };
+    }
+    case "companion": {
+      // The slot exists whether or not the creature has been loaded: a seat
+      // without the citing book still sees what the ability confers.
+      const who = e.actorUuid ? e.note || e.actorUuid : e.note || e.ref || "creature";
+      const state = e.actorUuid ? "" : " (not yet loaded)";
+      return { kind: label(V.EFFECT_TYPES, e.type), text: `${e.amount > 1 ? `${e.amount}× ` : ""}${who}${state}` };
+    }
     case "capability":
       return { kind: label(V.EFFECT_TYPES, e.type), text: label(V.SPELL_LIKE_FREQ, e.frequency) || e.note || "see description" };
     default:
@@ -114,19 +131,26 @@ export function createAbilitySheet(Base) {
         }))
         .filter((r) => r.damage.length || r.effects.length || r.conditions.length);
       context.libMissing = !globalThis.acksLib;
-      // A retired ability still imports; it just carries a notice. Removed-on-
-      // purpose reads as a caution, merely-omitted as info. A renamed thing
-      // needs no marker at all — it simply resolved.
+      // Converted content still imports; it just carries a notice. Removed-on-
+      // purpose reads as a caution, merely-omitted as info, and a RENAME is
+      // marked too — it resolved, but the reader's book calls it something else,
+      // so the notice names it. Wording and icon come from acks-lib.
       const statusKey = extras.conversionStatus || (extras.deprecated ? "deleted" : "");
       const status = statusKey ? V.CONVERSION_STATUS?.[statusKey] : null;
-      context.notice = status && status.severity !== "none"
+      const CLS = { caution: "warning", info: "info", note: "info" };
+      context.notice = status
         ? {
             severity: status.severity,
-            cls: status.severity === "caution" ? "warning" : "info",
-            tip: status.tip,
+            cls: CLS[status.severity] ?? "info",
+            icon: status.icon,
+            label: status.label,
+            tip: V.conversionTip?.(statusKey, extras.conversionFrom || this.item.name) ?? status.tip,
             replacedBy: extras.replacedBy,
           }
         : null;
+      // An alias is a real ability whose text lives under another entry. Say so
+      // — otherwise the two look like accidental duplicates.
+      context.aliasOf = extras.aliasOf || null;
       return context;
     }
 

@@ -17,5 +17,7 @@
   "ACKS-ABILITIES.warn.libMissing": "acks-lib is not active — the effect vocabulary is unavailable.",
   "ACKS-ABILITIES.warn.deprecated": "Removed in ACKS II — kept so older or converted sources still resolve.",
   "ACKS-ABILITIES.warn.replacedBy": "Superseded by",
+  "ACKS-ABILITIES.warn.aliasOf": "Its rules text is printed under",
+  "ACKS-ABILITIES.warn.aliasTip": "A distinct ability that shares another entry's rules text. It does not stack with that entry.",
   "ACKS-ABILITIES.mech.replacedBy": "Replaced By"
 }
