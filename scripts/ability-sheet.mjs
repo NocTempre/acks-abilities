@@ -13,6 +13,18 @@ import AbilityExtras from "./ability-extras.mjs";
 
 const T = `modules/${MODULE_ID}/templates`;
 
+/**
+ * A definition id ("def.power.longeval") reads as noise on a sheet, so show the
+ * ability's own name when that ability is in the world. The id is what the data
+ * holds and what survives a rename; this is display only, and falls back to the
+ * id whenever the referenced ability has not been imported.
+ */
+function refName(ref) {
+  if (!ref) return ref;
+  const item = game.items?.find?.((i) => i.getFlag?.("acks-content", "cookbook")?.id === ref);
+  return item?.name ?? ref;
+}
+
 /** Human-readable one-liner for an effect row. */
 function describeEffect(e, V) {
   const label = (enumObj, key) => enumObj?.[key]?.label ?? key ?? "";
@@ -31,7 +43,7 @@ function describeEffect(e, V) {
   };
   const n = lv(e.value);
   const signed = (x) => (x == null ? "" : `${x >= 0 ? "+" : ""}${x}`);
-  const refs = (a) => (a ?? []).join(", ");
+  const refs = (a) => (a ?? []).map(refName).join(", ");
 
   switch (e.type) {
     case "modifier":
@@ -46,11 +58,11 @@ function describeEffect(e, V) {
       return { kind: label(V.EFFECT_TYPES, e.type), text: e.restriction || e.condition || "—" };
     case "requires":
     case "grants":
-      return { kind: label(V.EFFECT_TYPES, e.type), text: `${refs(e.refs) || e.ref}${e.choose ? ` (choose ${e.choose})` : ""}` };
+      return { kind: label(V.EFFECT_TYPES, e.type), text: `${refs(e.refs) || refName(e.ref)}${e.choose ? ` (choose ${e.choose})` : ""}` };
     case "modifies":
       return {
         kind: label(V.EFFECT_TYPES, e.type),
-        text: `${refs(e.refs) || e.ref}: ${label(V.MODIFIER_TARGETS, e.target)} ${signed(n)} (${label(V.EFFECT_MODES, e.mode)})`,
+        text: `${refs(e.refs) || refName(e.ref)}: ${label(V.MODIFIER_TARGETS, e.target)} ${signed(n)} (${label(V.EFFECT_MODES, e.mode)})`,
       };
     case "spellLike":
       return { kind: label(V.EFFECT_TYPES, e.type), text: [e.spell, label(V.SPELL_LIKE_FREQ, e.frequency)].filter(Boolean).join(" — ") };
@@ -71,12 +83,12 @@ function describeEffect(e, V) {
     case "reroll": {
       const total = V.rerollTotal?.(e) ?? 2;
       const what = e.forWhat || label(V.MODIFIER_TARGETS, e.target) || "the roll";
-      return { kind: label(V.EFFECT_TYPES, e.type), text: `roll ${what} ${total}× — ${label(V.REROLL_KEEP, e.keep) || "keep the better"}` };
+      return { kind: label(V.EFFECT_TYPES, e.type), text: `${what} ${total}× — ${label(V.REROLL_KEEP, e.keep) || "Keep the Better"}` };
     }
     case "companion": {
       // The slot exists whether or not the creature has been loaded: a seat
       // without the citing book still sees what the ability confers.
-      const who = e.actorUuid ? e.note || e.actorUuid : e.note || e.ref || "creature";
+      const who = e.actorUuid ? e.note || e.actorUuid : e.note || refName(e.ref) || "creature";
       const state = e.actorUuid ? "" : " (not yet loaded)";
       return { kind: label(V.EFFECT_TYPES, e.type), text: `${e.amount > 1 ? `${e.amount}× ` : ""}${who}${state}` };
     }
@@ -145,12 +157,12 @@ export function createAbilitySheet(Base) {
             icon: status.icon,
             label: status.label,
             tip: V.conversionTip?.(statusKey, extras.conversionFrom || this.item.name) ?? status.tip,
-            replacedBy: extras.replacedBy,
+            replacedBy: extras.replacedBy ? refName(extras.replacedBy) : "",
           }
         : null;
       // An alias is a real ability whose text lives under another entry. Say so
       // — otherwise the two look like accidental duplicates.
-      context.aliasOf = extras.aliasOf || null;
+      context.aliasOf = extras.aliasOf ? refName(extras.aliasOf) : null;
       return context;
     }
 

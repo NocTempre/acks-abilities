@@ -68,10 +68,15 @@ Hooks.once("ready", () => {
     return;
   }
   AcksAbilitySheet = createAbilitySheet(Base);
+  // DEFAULT, because a sheet nobody selects shows nobody the mechanics — which
+  // is the entire point of this module. Safe to default: it SUBCLASSES the
+  // system's own ability sheet and keeps every tab it defines, so enabling this
+  // module adds the Mechanics tab and takes nothing away. A GM who prefers the
+  // plain sheet can still pick it per item in the sheet config.
   foundry.applications.apps.DocumentSheetConfig.registerSheet(Item, MODULE_ID, AcksAbilitySheet, {
     types: [ABILITY_TYPE],
-    makeDefault: false,
+    makeDefault: true,
     label: game.i18n.localize("ACKS-ABILITIES.sheet.ability"),
   });
-  console.log(`${MODULE_ID} | ACKS Ability sheet registered.`);
+  console.log(`${MODULE_ID} | ACKS Ability sheet registered (default for ${ABILITY_TYPE} items).`);
 });

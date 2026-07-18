@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.1
+
+- **The ACKS Ability sheet is now the default** for ability items. It registered
+  correctly before but was not default, so the Mechanics tab was invisible
+  unless a GM went and selected the sheet by hand. Safe to default: it subclasses
+  the system's own ability sheet and keeps every tab that sheet defines, so this
+  adds a tab and removes nothing. The plain sheet is still selectable per item.
+- References read as names, not ids: "Its rules text is printed under *Longeval*"
+  rather than `def.power.longeval`. Falls back to the id when the referenced
+  ability is not in the world.
+- Reroll rows no longer read "Reroll roll Attack Throw".
+
 ## 0.2.0
 
 - **Aliases are real abilities.** An entry the books list under one name whose
