@@ -4,6 +4,13 @@
     <p class="notification warning">{{localize "ACKS-ABILITIES.warn.libMissing"}}</p>
   {{/if}}
 
+  {{#if extras.deprecated}}
+    <p class="notification warning">
+      {{localize "ACKS-ABILITIES.warn.deprecated"}}
+      {{#if extras.replacedBy}} {{localize "ACKS-ABILITIES.warn.replacedBy"}} <code>{{extras.replacedBy}}</code>{{/if}}
+    </p>
+  {{/if}}
+
   <fieldset>
     <legend>{{localize "ACKS-ABILITIES.mech.classification"}}</legend>
 

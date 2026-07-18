@@ -14,5 +14,8 @@
   "ACKS-ABILITIES.mech.effects": "Effects",
   "ACKS-ABILITIES.mech.noEffects": "No structured effects. The full text streams from your own book when connected.",
   "ACKS-ABILITIES.mech.defenses": "Immunities & Resistances",
-  "ACKS-ABILITIES.warn.libMissing": "acks-lib is not active — the effect vocabulary is unavailable."
+  "ACKS-ABILITIES.warn.libMissing": "acks-lib is not active — the effect vocabulary is unavailable.",
+  "ACKS-ABILITIES.warn.deprecated": "Removed in ACKS II — kept so older or converted sources still resolve.",
+  "ACKS-ABILITIES.warn.replacedBy": "Superseded by",
+  "ACKS-ABILITIES.mech.replacedBy": "Replaced By"
 }

@@ -28,7 +28,8 @@ export default class AbilityExtras extends foundry.abstract.DataModel {
       general: bool(), // the "(G)" general-proficiency marker
       repeatable: bool(), // "may be selected multiple times"
       powerValue: num(), // custom-power cost (0.5 / 1 / 1.5 / 2 / 3 / 5); powers only
-      deprecated: bool(), // "removed from ACKS II"
+      deprecated: bool(), // "removed from ACKS II" — still ingested, just flagged
+      replacedBy: str(), // what supersedes it (a def id), so references can redirect
       requires: str(), // prerequisite marker (detail lives in the lazy description)
       // --- A pick-one branch (Combat Trickery maneuver, Elementalism element…) ---
       choice: new SchemaField({
