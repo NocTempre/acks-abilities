@@ -42,7 +42,8 @@ const stagedFlagged = staged.filter((f) => flagged.some((p) => f === p || f.star
 
 const inHead = stagedFlagged.filter((f) => {
   try {
-    git("cat-file", "-e", `HEAD:${f}`);
+    // stdio: git is noisy on a root commit, where HEAD does not resolve yet.
+    execFileSync("git", ["cat-file", "-e", `HEAD:${f}`], { cwd: ROOT, stdio: "ignore" });
     return true;
   } catch {
     return false;
@@ -75,6 +76,16 @@ if (additions.length) {
 }
 
 console.error(`\n  Quarantined ${stagedFlagged.length} file(s): unstaged and locally ignored.`);
-console.error("  They remain on disk. The rest of your commit proceeds normally.");
-console.error(`  Local-only ignore list: .git/info/exclude\n`);
+console.error("  They remain on disk. Local-only ignore list: .git/info/exclude");
+
+/* If the leak was the whole commit there is nothing left to record. Abort
+ * rather than let git write an empty commit — the quarantine already did its
+ * job, and a stray empty commit just muddies the log. */
+const remaining = git("diff", "--cached", "--name-only").trim();
+if (!remaining) {
+  console.error("\n  Nothing left to commit — that was the entire staged set. Commit aborted.\n");
+  process.exit(1);
+}
+
+console.error("  The rest of your commit proceeds normally.\n");
 process.exit(0); // let the commit through — the leak is out of it
