@@ -114,6 +114,19 @@ export function createAbilitySheet(Base) {
         }))
         .filter((r) => r.damage.length || r.effects.length || r.conditions.length);
       context.libMissing = !globalThis.acksLib;
+      // A retired ability still imports; it just carries a notice. Removed-on-
+      // purpose reads as a caution, merely-omitted as info. A renamed thing
+      // needs no marker at all — it simply resolved.
+      const statusKey = extras.conversionStatus || (extras.deprecated ? "deleted" : "");
+      const status = statusKey ? V.CONVERSION_STATUS?.[statusKey] : null;
+      context.notice = status && status.severity !== "none"
+        ? {
+            severity: status.severity,
+            cls: status.severity === "caution" ? "warning" : "info",
+            tip: status.tip,
+            replacedBy: extras.replacedBy,
+          }
+        : null;
       return context;
     }
 

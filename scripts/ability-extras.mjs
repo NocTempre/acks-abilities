@@ -14,7 +14,7 @@
  */
 import { MODULE_ID, FLAG_EXTRAS } from "./constants.mjs";
 import { num, str, bool, choice, effectsField, defensesField } from "../../acks-lib/scripts/fields.mjs";
-import { ABILITY_CATEGORIES } from "../../acks-lib/scripts/vocab.mjs";
+import { ABILITY_CATEGORIES, CONVERSION_STATUS } from "../../acks-lib/scripts/vocab.mjs";
 
 export default class AbilityExtras extends foundry.abstract.DataModel {
   /** Array-valued paths, reconstructed from FormDataExtended's numeric-keyed objects. */
@@ -30,6 +30,9 @@ export default class AbilityExtras extends foundry.abstract.DataModel {
       powerValue: num(), // custom-power cost (0.5 / 1 / 1.5 / 2 / 3 / 5); powers only
       deprecated: bool(), // "removed from ACKS II" — still ingested, just flagged
       replacedBy: str(), // what supersedes it (a def id), so references can redirect
+      // Set when the ability arrived from a converted/legacy source: `deleted`
+      // (removed on purpose) reads as a caution, `absent` (merely omitted) as info.
+      conversionStatus: choice(CONVERSION_STATUS),
       requires: str(), // prerequisite marker (detail lives in the lazy description)
       // --- A pick-one branch (Combat Trickery maneuver, Elementalism element…) ---
       choice: new SchemaField({

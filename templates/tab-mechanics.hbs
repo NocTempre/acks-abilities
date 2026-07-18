@@ -4,10 +4,10 @@
     <p class="notification warning">{{localize "ACKS-ABILITIES.warn.libMissing"}}</p>
   {{/if}}
 
-  {{#if extras.deprecated}}
-    <p class="notification warning">
-      {{localize "ACKS-ABILITIES.warn.deprecated"}}
-      {{#if extras.replacedBy}} {{localize "ACKS-ABILITIES.warn.replacedBy"}} <code>{{extras.replacedBy}}</code>{{/if}}
+  {{#if notice}}
+    <p class="notification {{notice.cls}} acks-abilities-notice" data-tooltip="{{notice.tip}}">
+      {{notice.tip}}
+      {{#if notice.replacedBy}} {{localize "ACKS-ABILITIES.warn.replacedBy"}} <code>{{notice.replacedBy}}</code>{{/if}}
     </p>
   {{/if}}
 
