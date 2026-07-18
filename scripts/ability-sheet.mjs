@@ -48,10 +48,23 @@ function describeEffect(e, V) {
         text: `${refs(e.refs) || e.ref}: ${label(V.MODIFIER_TARGETS, e.target)} ${signed(n)} (${label(V.EFFECT_MODES, e.mode)})`,
       };
     case "spellLike":
-      return { kind: label(V.EFFECT_TYPES, e.type), text: `${e.spell} — ${label(V.SPELL_LIKE_FREQ, e.frequency)}` };
+      return { kind: label(V.EFFECT_TYPES, e.type), text: [e.spell, label(V.SPELL_LIKE_FREQ, e.frequency)].filter(Boolean).join(" — ") };
     case "sense":
+      return { kind: label(V.EFFECT_TYPES, e.type), text: `${label(V.SENSE_TYPES, e.sense) || e.vision}${e.range ? ` ${e.range}'` : ""}` };
     case "movement":
-      return { kind: label(V.EFFECT_TYPES, e.type), text: `${e.sense || e.mode || e.vision}${e.range ? ` ${e.range}'` : ""}` };
+      return { kind: label(V.EFFECT_TYPES, e.type), text: `${label(V.MOVEMENT_TYPES, e.movementMode)}${n != null ? ` ${n}'` : ""}` };
+    case "spellcastingMod":
+      return {
+        kind: label(V.EFFECT_TYPES, e.type),
+        text: [e.school, e.casterLevelDelta ? `${signed(e.casterLevelDelta)} caster levels` : "", e.savePenalty ? `${signed(e.savePenalty)} to saves` : ""]
+          .filter(Boolean).join(", ") || "—",
+      };
+    case "resource":
+      return { kind: label(V.EFFECT_TYPES, e.type), text: `${e.action || ""} ${label(V.RESOURCE_KINDS, e.resource)}${e.amount ? ` ×${e.amount}` : ""}`.trim() };
+    case "economic":
+      return { kind: label(V.EFFECT_TYPES, e.type), text: `${e.amount ?? ""}${e.unit || ""}${e.period ? ` per ${e.period}` : ""}`.trim() || "—" };
+    case "capability":
+      return { kind: label(V.EFFECT_TYPES, e.type), text: label(V.SPELL_LIKE_FREQ, e.frequency) || e.note || "see description" };
     default:
       return { kind: label(V.EFFECT_TYPES, e.type), text: e.note || e.condition || "—" };
   }
