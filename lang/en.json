@@ -1,3 +1,18 @@
 {
-  "ACKS-ABILITIES.Title": "ACKS II — Abilities"
+  "ACKS-ABILITIES.Title": "ACKS II — Abilities",
+  "ACKS-ABILITIES.sheet.ability": "ACKS Ability",
+  "ACKS-ABILITIES.tab.mechanics": "Mechanics",
+  "ACKS-ABILITIES.mech.classification": "Classification",
+  "ACKS-ABILITIES.mech.category": "Category",
+  "ACKS-ABILITIES.mech.general": "General Proficiency",
+  "ACKS-ABILITIES.mech.generalHint": "Marked (G) in the book — available from the general list, not only a class list.",
+  "ACKS-ABILITIES.mech.repeatable": "May Be Selected More Than Once",
+  "ACKS-ABILITIES.mech.powerValue": "Custom Power Value",
+  "ACKS-ABILITIES.mech.powerValueHint": "How many custom powers this counts as when building a class. Blank for proficiencies.",
+  "ACKS-ABILITIES.mech.requires": "Requires",
+  "ACKS-ABILITIES.mech.deprecated": "Removed in ACKS II",
+  "ACKS-ABILITIES.mech.effects": "Effects",
+  "ACKS-ABILITIES.mech.noEffects": "No structured effects. The full text streams from your own book when connected.",
+  "ACKS-ABILITIES.mech.defenses": "Immunities & Resistances",
+  "ACKS-ABILITIES.warn.libMissing": "acks-lib is not active — the effect vocabulary is unavailable."
 }
