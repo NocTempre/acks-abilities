@@ -82,7 +82,18 @@
     {{#if effectRows.length}}
       <ol class="acks-abilities-effects">
         {{#each effectRows}}
-          <li><span class="acks-abilities-effect-kind">{{this.kind}}</span> <span class="acks-abilities-effect-text">{{this.text}}</span></li>
+          <li>
+            <span class="acks-abilities-effect-kind">{{this.kind}}</span>
+            <span class="acks-abilities-effect-text">{{this.text}}</span>
+            {{#if this.ladder}}
+              <div class="acks-abilities-ladder-wrap">
+                <table class="acks-abilities-ladder">
+                  <tr><th>{{localize "ACKS-ABILITIES.mech.level"}}</th>{{#each this.ladder.levels}}<td>{{this}}</td>{{/each}}</tr>
+                  <tr><th>{{localize "ACKS-ABILITIES.mech.throw"}}</th>{{#each this.ladder.values}}<td>{{this}}</td>{{/each}}</tr>
+                </table>
+              </div>
+            {{/if}}
+          </li>
         {{/each}}
       </ol>
     {{else}}

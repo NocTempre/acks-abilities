@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.1
+
+- **A per-level progression renders as a table.** A ladder read off a printed
+  per-level grid (a thief skill's fourteen levels) was being listed inline as
+  "19 @1, 18 @2, 17 @3, …" — unreadable, and it read as though the value only
+  changed at those points rather than at every level. Contiguous ladders now
+  show a Level/Throw table with the span summarised above it; sparse ones
+  (+1/+2/+3 at 1st/7th/13th) still list inline, which is what they are.
+
 ## 0.3.0
 
 - **Capabilities.** An ability now records what it lets you *do* (`provides`),

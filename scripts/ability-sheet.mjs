@@ -25,6 +25,22 @@ function refName(ref) {
   return item?.name ?? ref;
 }
 
+/**
+ * A breakpoint ladder that came from a printed PER-LEVEL table: contiguous
+ * levels, one value each, long enough that listing it inline is noise. Read
+ * off a table, it should be shown as a table.
+ */
+function isDenseLadder(bp) {
+  if (!bp || bp.length < 4) return false;
+  return bp.every((b, i) => i === 0 || b.atLevel === bp[i - 1].atLevel + 1);
+}
+
+const ordinal = (n) => {
+  const s = ["th", "st", "nd", "rd"];
+  const v = Math.abs(n) % 100;
+  return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`;
+};
+
 /** Human-readable one-liner for an effect row. */
 function describeEffect(e, V) {
   const label = (enumObj, key) => enumObj?.[key]?.label ?? key ?? "";
@@ -32,6 +48,15 @@ function describeEffect(e, V) {
     if (!v) return null;
     if (v.kind === "perLevel" && v.base != null) return `${v.base} (${v.per >= 0 ? "+" : ""}${v.per}/level)`;
     if (v.kind === "breakpoints" && v.breakpoints?.length) {
+      // A ladder read off a printed PER-LEVEL table has a value for every level
+      // in its range. Listing all fourteen inline is unreadable and, worse,
+      // reads as though the value only changes at those points — so summarise
+      // the span here and let the row render the full table underneath.
+      if (isDenseLadder(v.breakpoints)) {
+        const first = v.breakpoints[0];
+        const last = v.breakpoints[v.breakpoints.length - 1];
+        return `${first.value}+ at ${ordinal(first.atLevel)} to ${last.value}+ at ${ordinal(last.atLevel)}`;
+      }
       return v.breakpoints.map((b) => `${b.value} @${b.atLevel}`).join(", ");
     }
     // A conditional ladder reads off a scale rather than level, so name it.
@@ -48,8 +73,12 @@ function describeEffect(e, V) {
   switch (e.type) {
     case "modifier":
       return { kind: label(V.EFFECT_TYPES, e.type), text: `${label(V.MODIFIER_TARGETS, e.target)} ${signed(n)}${e.forWhat ? ` (${e.forWhat})` : ""}` };
-    case "throw":
-      return { kind: label(V.EFFECT_TYPES, e.type), text: `${e.forWhat ? `${e.forWhat} ` : ""}throw ${n}+` };
+    case "throw": {
+      // A dense-ladder summary already reads "19+ at 1st to …" — appending the
+      // target-number "+" to that would double it.
+      const span = isDenseLadder(e.value?.breakpoints);
+      return { kind: label(V.EFFECT_TYPES, e.type), text: `${e.forWhat ? `${e.forWhat} ` : ""}throw ${n}${span ? "" : "+"}` };
+    }
     case "progressionAs":
       return { kind: label(V.EFFECT_TYPES, e.type), text: `as ${label(V.PROGRESSION_CLASSES, e.as)} — ${label(V.PROGRESSION_LEVELS, e.atLevel)}` };
     case "proficiencyGrant":
@@ -131,7 +160,16 @@ export function createAbilitySheet(Base) {
       context.choices = {
         category: V.choicesOf?.(V.ABILITY_CATEGORIES ?? {}) ?? {},
       };
-      context.effectRows = (extras.effects ?? []).map((e) => describeEffect(e, V));
+      context.effectRows = (extras.effects ?? []).map((e) => {
+        const row = describeEffect(e, V);
+        // Carry the whole ladder so the row can show every level, not a summary
+        // that looks like the value only changes at a few of them.
+        const bp = e.value?.breakpoints;
+        if (isDenseLadder(bp)) {
+          row.ladder = { levels: bp.map((b) => b.atLevel), values: bp.map((b) => `${b.value}+`) };
+        }
+        return row;
+      });
       const d = extras.defenses ?? {};
       context.defenseRows = ["immunities", "resistances", "susceptibilities"]
         .map((k) => ({
