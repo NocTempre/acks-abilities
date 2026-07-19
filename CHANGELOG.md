@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.6.1
+
+- **Integration instructions.** The README documented installation and nothing
+  about how another module reads the model — so every consumer was guessing at
+  the flag shape. Adds a contract: read through the API, not the raw flag.
+- **`rankOf`, `scalesFor` and `targetOf` are now on the public API.** They
+  were internal, which left a consumer no way to ask what a count MEANS
+  without re-deriving it — and re-deriving it is wrong for every ability that
+  spends its count on a list rather than a rank. `rankOf` is also where the
+  per-ability rule and the alias rank-grant will land, so calling it now keeps
+  a consumer correct later.
+- README states which surface is supported and that anything imported from
+  `scripts/*.mjs` is internal and will move.
+
 ## 0.6.0
 
 - **An ability taken more than once is one row with a count.** New

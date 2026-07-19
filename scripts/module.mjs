@@ -10,6 +10,7 @@
 import { MODULE_ID, FLAG_EXTRAS, ABILITY_TYPE } from "./constants.mjs";
 import AbilityExtras from "./ability-extras.mjs";
 import { createAbilitySheet } from "./ability-sheet.mjs";
+import { rankOf, scalesFor, targetOf } from "./ability-rolls.mjs";
 
 /** The dynamically-created sheet class (base is resolved at ready). */
 let AcksAbilitySheet = null;
@@ -31,6 +32,14 @@ Hooks.once("init", () => {
     AbilityExtras,
     /** Read the extended effect model for an ability item (an AbilityExtras instance). */
     getExtras: (item) => AbilityExtras.fromItem(item),
+    // Rank and target semantics, exposed because a consumer MUST NOT
+    // re-derive them. What a count means is per-ability and changing (see
+    // README, "qty is not the effective rank"), so a module that reads
+    // extras.qty and treats it as rank will be wrong for every ability that
+    // spends its count on a list rather than a rank. Ask here instead.
+    rankOf,
+    scalesFor,
+    targetOf,
     get AcksAbilitySheet() {
       return AcksAbilitySheet;
     },
