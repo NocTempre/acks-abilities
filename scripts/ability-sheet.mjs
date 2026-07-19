@@ -75,10 +75,15 @@ function describeEffect(e, V) {
     case "modifier": {
       // A situational bonus must SAY so — a bare "+4" claims it always applies,
       // and most of these apply only while ambushing, negotiating, casting…
+      // WHOSE roll this hits LEADS the line when it is not the character's
+      // own: "-2 to surprise" and "the opponent: -2 to surprise" are opposite
+      // abilities, and reading that off the tail of a qualifier list is too
+      // easy to miss.
+      const subject = e.appliesTo && e.appliesTo !== "self" ? `${label(V.EFFECT_SUBJECTS, e.appliesTo)}: ` : "";
       const qual = [e.forWhat, e.condition === "situational" ? "situational" : e.condition, e.mode === "replace" ? "replaces the default" : "", e.mode === "set" ? "does not apply" : ""]
         .filter(Boolean).join("; ");
       const amount = e.mode === "set" ? "" : ` ${signed(n)}`;
-      return { kind: label(V.EFFECT_TYPES, e.type), text: `${label(V.MODIFIER_TARGETS, e.target)}${amount}${qual ? ` (${qual})` : ""}` };
+      return { kind: label(V.EFFECT_TYPES, e.type), text: `${subject}${label(V.MODIFIER_TARGETS, e.target)}${amount}${qual ? ` (${qual})` : ""}` };
     }
     case "throw": {
       // A dense-ladder summary already reads "19+ at 1st to …" — appending the
@@ -109,7 +114,12 @@ function describeEffect(e, V) {
     case "spellcastingMod":
       return {
         kind: label(V.EFFECT_TYPES, e.type),
-        text: [e.school, e.casterLevelDelta ? `${signed(e.casterLevelDelta)} caster levels` : "", e.savePenalty ? `${signed(e.savePenalty)} to saves` : ""]
+        // No `savePenalty` here. This branch rendered one, but acks-lib's
+        // effectField declares no such field, so the value could never survive
+        // validation to reach the sheet — a display path with no storage
+        // behind it, found by chef audit. A save penalty an ability imposes on
+        // its targets is a `modifier` with `appliesTo: "opponent"`.
+        text: [e.school, e.casterLevelDelta ? `${signed(e.casterLevelDelta)} caster levels` : ""]
           .filter(Boolean).join(", ") || "—",
       };
     case "resource":
