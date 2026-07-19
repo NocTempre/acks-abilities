@@ -71,8 +71,14 @@ function describeEffect(e, V) {
   const refs = (a) => (a ?? []).map(refName).join(", ");
 
   switch (e.type) {
-    case "modifier":
-      return { kind: label(V.EFFECT_TYPES, e.type), text: `${label(V.MODIFIER_TARGETS, e.target)} ${signed(n)}${e.forWhat ? ` (${e.forWhat})` : ""}` };
+    case "modifier": {
+      // A situational bonus must SAY so — a bare "+4" claims it always applies,
+      // and most of these apply only while ambushing, negotiating, casting…
+      const qual = [e.forWhat, e.condition === "situational" ? "situational" : e.condition, e.mode === "replace" ? "replaces the default" : "", e.mode === "set" ? "does not apply" : ""]
+        .filter(Boolean).join("; ");
+      const amount = e.mode === "set" ? "" : ` ${signed(n)}`;
+      return { kind: label(V.EFFECT_TYPES, e.type), text: `${label(V.MODIFIER_TARGETS, e.target)}${amount}${qual ? ` (${qual})` : ""}` };
+    }
     case "throw": {
       // A dense-ladder summary already reads "19+ at 1st to …" — appending the
       // target-number "+" to that would double it.

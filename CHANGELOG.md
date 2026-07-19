@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.2
+
+- **Modifier rows show their qualifier.** A bare "+4" claims a bonus always
+  applies; most apply only while ambushing, negotiating or casting. A modifier
+  marked situational now says so, one that supersedes a default reads "replaces
+  the default", and one that negates a penalty reads "does not apply" instead of
+  showing a meaningless +0.
+
 ## 0.3.1
 
 - **A per-level progression renders as a table.** A ladder read off a printed
