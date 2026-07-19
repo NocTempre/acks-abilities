@@ -79,3 +79,16 @@
 .acks-abilities-roll-cond {
   margin: 2px 0 0 26px;
 }
+
+/* A count above 1 on an ability the book says cannot be taken twice. The data
+   contradicts itself, so the field argues with you instead of looking settled. */
+.acks-abilities-conflict input,
+.acks-abilities-conflict select {
+  border-color: var(--color-level-error, #b60205);
+  outline: 1px solid var(--color-level-error, #b60205);
+}
+
+.acks-abilities-conflict .hint {
+  color: var(--color-level-error, #b60205);
+  opacity: 1;
+}

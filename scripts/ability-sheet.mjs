@@ -183,6 +183,10 @@ export function createAbilitySheet(Base) {
       // ability, where the combination is a data fault and hiding it would
       // hide the fault.
       context.showQty = !!extras.repeatable || Number(extras.qty) > 1;
+      // Taken more than once while the book says it cannot be. That is a
+      // contradiction in the data, not a preference, so it is drawn as one
+      // rather than sitting quietly in a number field nobody re-reads.
+      context.qtyConflict = !extras.repeatable && Number(extras.qty) > 1;
       context.choices = {
         category: V.choicesOf?.(V.ABILITY_CATEGORIES ?? {}) ?? {},
       };

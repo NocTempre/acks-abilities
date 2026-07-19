@@ -57,12 +57,15 @@
           sheet. A count above 1 on a NON-repeatable ability still shows -
           that combination is a data fault and hiding it would hide the fault. --}}
     {{#if showQty}}
-    <div class="form-group">
+    <div class="form-group{{#if qtyConflict}} acks-abilities-conflict{{/if}}">
       <label>{{localize "ACKS-ABILITIES.mech.qty"}}</label>
       <div class="form-fields">
         <input type="number" step="1" min="1" name="{{x}}.qty" value="{{extras.qty}}">
       </div>
-      <p class="hint">{{localize "ACKS-ABILITIES.mech.qtyHint"}}</p>
+      <p class="hint">
+        {{#if qtyConflict}}{{localize "ACKS-ABILITIES.mech.qtyConflict"}}
+        {{else}}{{localize "ACKS-ABILITIES.mech.qtyHint"}}{{/if}}
+      </p>
     </div>
     {{/if}}
 

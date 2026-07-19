@@ -9,6 +9,7 @@
   "ACKS-ABILITIES.mech.repeatable": "May Be Selected More Than Once",
   "ACKS-ABILITIES.mech.qty": "Times Taken",
   "ACKS-ABILITIES.mech.qtyHint": "How many times this character has taken it — one entry carrying a count, not repeated copies. What the count means depends on the ability: another rank of the same thing, or another pick from its list.",
+  "ACKS-ABILITIES.mech.qtyConflict": "Taken more than once, but this ability is not marked as repeatable — one of the two is wrong.",
   "ACKS-ABILITIES.mech.powerValue": "Custom Power Value",
   "ACKS-ABILITIES.mech.powerValueHint": "How many custom powers this counts as when building a class. Blank for proficiencies.",
   "ACKS-ABILITIES.mech.requires": "Requires",
