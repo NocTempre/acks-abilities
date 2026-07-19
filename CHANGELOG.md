@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.6.0
+
+- **An ability taken more than once is one row with a count.** New
+  `extras.qty` — "Times Taken" — so three ranks of Animal Husbandry are one
+  entry reading ×3, the way a stack of arrows is one inventory line, instead
+  of three identical rows.
+  - Shown only when it says something: silent on a non-repeatable ability
+    sitting at 1, because "×1" on every sheet is noise.
+  - **A count above 1 on a non-repeatable ability draws in red.** That
+    combination is a contradiction in the data, and the silence rule would
+    otherwise have hidden the one case worth seeing.
+- **`qty` is not the effective rank, and conflating them is the bug.** `qty`
+  is how many times *you took it*; the rank the mechanics read is
+  `qty + Σ(granted ranks)`. Holding one ability by two names is not rank 2 by
+  duplication — an alias grants "+1 rank of X" and the root absorbs it while
+  its own count stays put, so the alias stays visible as a contributor rather
+  than vanishing into an unexplained number.
+- What a count MEANS is deliberately not modelled yet: another rank of one
+  thing (Animal Husbandry), another pick from a list (Weapon Proficiency), or
+  either (Art/Craft). `rankOf()` is one reading of qty — right for the first,
+  wrong for the others — so it is left alone rather than rewritten into a
+  confident lie.
+- Requires acks-lib ≥ 0.6.0 for the scoping primitives.
+
 ## 0.5.0
 
 - **Unverified mechanics say so.** Abilities whose mechanics were classified by
