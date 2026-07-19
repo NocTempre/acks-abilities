@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.5.0
+
+- **Unverified mechanics say so.** Abilities whose mechanics were classified by
+  the extraction scan rather than read against the printed page now show
+  "Machine-classified — not yet chef-audited." on the Mechanics and Rolls tabs.
+  A wrong sign or a missed bonus must read as a machine draft, never as the
+  book's ruling — Blind Fighting prints a −2 that is a net *bonus* because it
+  replaces a −4, and a scan cannot know that. The notice clears per ability as
+  each one is signed off. Needs acks-content ≥ 0.15.0 to supply the flag.
+- **A modifier says whose roll it is.** An effect carrying `appliesTo` of
+  `opponent` or `ally` now leads with the subject instead of silently reading as
+  the character's own. Hiding penalises the OPPONENT's surprise roll; rendered
+  without the subject it looked like a penalty on the thief. Requires
+  acks-lib ≥ 0.5.0.
+- Removed a render path for `savePenalty`, a field acks-lib does not declare
+  and nothing ever stored — found by the same audit.
+
 ## 0.4.0
 
 - **A Rolls tab.** An ability is not one roll — Animal Husbandry diagnoses,
