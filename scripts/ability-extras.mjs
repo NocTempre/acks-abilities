@@ -27,6 +27,24 @@ export default class AbilityExtras extends foundry.abstract.DataModel {
       category: choice(ABILITY_CATEGORIES, { initial: "proficiency" }),
       general: bool(), // the "(G)" general-proficiency marker
       repeatable: bool(), // "may be selected multiple times"
+      // How many times this character has taken it. ONE item carrying a count,
+      // never N identical rows — the same way a stack of arrows is one
+      // inventory line.
+      //
+      // `qty` is only the COUNT. What it MEANS is per-ability and not yet
+      // modelled: Animal Husbandry taken twice is rank 2 of one thing, while
+      // Weapon Proficiency taken twice is two different weapons, and Art/Craft
+      // taken twice may be either a second discipline or a better first one.
+      // So do not read qty as rank — rankOf() is one INTERPRETATION of qty,
+      // correct for rank-scaled abilities and wrong for list-expanding ones.
+      // Modelling that (and where a character's actual picks live) is the open
+      // half of the merged-ability work.
+      //
+      // The caveat that is easy to get wrong either way: holding one ability
+      // under two NAMES is not qty 2. Aliases and acquisition variants share a
+      // definition but do not stack — two doors into one ability still leave
+      // you standing in one room. Only taking it AGAIN raises qty.
+      qty: num({ integer: true, initial: 1, min: 1 }),
       powerValue: num(), // custom-power cost (0.5 / 1 / 1.5 / 2 / 3 / 5); powers only
       deprecated: bool(), // "removed from ACKS II" — still ingested, just flagged
       replacedBy: str(), // what supersedes it (a def id), so references can redirect
