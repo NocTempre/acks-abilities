@@ -40,10 +40,12 @@ export default class AbilityExtras extends foundry.abstract.DataModel {
       // Modelling that (and where a character's actual picks live) is the open
       // half of the merged-ability work.
       //
-      // The caveat that is easy to get wrong either way: holding one ability
-      // under two NAMES is not qty 2. Aliases and acquisition variants share a
-      // definition but do not stack — two doors into one ability still leave
-      // you standing in one room. Only taking it AGAIN raises qty.
+      // qty is NOT the effective rank. Holding one ability by two routes can
+      // legitimately read as rank 2, but the second route must not become a
+      // second copy: an alias/variant grants "+1 rank of X" and the root
+      // ABSORBS it, leaving its own qty alone. So the mechanics read
+      // `qty + Σ(granted ranks)`, and the two numbers answer different
+      // questions — "how often did you take it" vs "what does it read at".
       qty: num({ integer: true, initial: 1, min: 1 }),
       powerValue: num(), // custom-power cost (0.5 / 1 / 1.5 / 2 / 3 / 5); powers only
       deprecated: bool(), // "removed from ACKS II" — still ingested, just flagged

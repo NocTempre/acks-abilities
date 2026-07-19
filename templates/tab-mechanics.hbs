@@ -51,6 +51,21 @@
       </div>
     </div>
 
+    {{!-- Times taken. Shown only when it says something: a count of 1 is the
+          default, and an ability that cannot be repeated has nothing to count,
+          so both stay silent rather than putting a meaningless "x1" on every
+          sheet. A count above 1 on a NON-repeatable ability still shows -
+          that combination is a data fault and hiding it would hide the fault. --}}
+    {{#if showQty}}
+    <div class="form-group">
+      <label>{{localize "ACKS-ABILITIES.mech.qty"}}</label>
+      <div class="form-fields">
+        <input type="number" step="1" min="1" name="{{x}}.qty" value="{{extras.qty}}">
+      </div>
+      <p class="hint">{{localize "ACKS-ABILITIES.mech.qtyHint"}}</p>
+    </div>
+    {{/if}}
+
     <div class="form-group">
       <label>{{localize "ACKS-ABILITIES.mech.powerValue"}}</label>
       <div class="form-fields">

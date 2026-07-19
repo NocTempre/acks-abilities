@@ -176,6 +176,13 @@ export function createAbilitySheet(Base) {
       const extras = AbilityExtras.fromItem(this.item);
       context.extras = extras;
       context.x = `flags.${MODULE_ID}.${FLAG_EXTRAS}`;
+      // The count earns a row only when it carries information: a repeatable
+      // ability the character could take again, or a count already above 1.
+      // A non-repeatable ability sitting at 1 says nothing, and "x1" on every
+      // sheet is noise. Above 1 always shows — including on a NON-repeatable
+      // ability, where the combination is a data fault and hiding it would
+      // hide the fault.
+      context.showQty = !!extras.repeatable || Number(extras.qty) > 1;
       context.choices = {
         category: V.choicesOf?.(V.ABILITY_CATEGORIES ?? {}) ?? {},
       };
