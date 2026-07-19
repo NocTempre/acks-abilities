@@ -13,12 +13,12 @@
  * layout the toolchain assumes; resolves under /modules/ at runtime).
  */
 import { MODULE_ID, FLAG_EXTRAS } from "./constants.mjs";
-import { num, str, bool, choice, refList, effectsField, defensesField } from "../../acks-lib/scripts/fields.mjs";
+import { num, str, bool, choice, refList, effectsField, defensesField, rollsField } from "../../acks-lib/scripts/fields.mjs";
 import { ABILITY_CATEGORIES, CONVERSION_STATUS } from "../../acks-lib/scripts/vocab.mjs";
 
 export default class AbilityExtras extends foundry.abstract.DataModel {
   /** Array-valued paths, reconstructed from FormDataExtended's numeric-keyed objects. */
-  static ARRAY_PATHS = ["effects", "choice.options"];
+  static ARRAY_PATHS = ["effects", "rolls", "choice.options"];
 
   static defineSchema() {
     const { SchemaField, ArrayField } = foundry.data.fields;
@@ -53,6 +53,13 @@ export default class AbilityExtras extends foundry.abstract.DataModel {
         prompt: str(),
         options: new ArrayField(new SchemaField({ label: str(), ref: str() })),
       }),
+      // --- The rolls this ability offers ---
+      // An ability is not one roll. Animal Husbandry diagnoses, cures, cures
+      // serious injury and extracts venom — four rolls, three of them on their
+      // own rank progression. The core item carries a single roll/rollTarget,
+      // which cannot express that, so the set lives here and the Rolls tab
+      // presents them individually.
+      rolls: rollsField(),
       // --- The structured, level-aware effects (acks-lib vocabulary) ---
       effects: effectsField(),
       // --- Immunities / resistances / susceptibilities (mostly monster abilities) ---

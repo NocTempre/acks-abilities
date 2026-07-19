@@ -47,3 +47,35 @@
   text-align: right;
   opacity: 0.75;
 }
+
+/* Rolls tab: one clickable row per roll, its progression underneath. */
+.acks-abilities-roll-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.acks-abilities-roll + .acks-abilities-roll {
+  margin-top: 6px;
+}
+
+.acks-abilities-roll-go {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+}
+
+.acks-abilities-roll-label {
+  flex: 1;
+}
+
+.acks-abilities-roll-value {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.acks-abilities-roll-cond {
+  margin: 2px 0 0 26px;
+}

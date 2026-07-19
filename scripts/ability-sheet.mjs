@@ -10,6 +10,7 @@
  */
 import { MODULE_ID, FLAG_EXTRAS } from "./constants.mjs";
 import AbilityExtras from "./ability-extras.mjs";
+import { rollAbility, targetOf, scalesFor } from "./ability-rolls.mjs";
 
 const T = `modules/${MODULE_ID}/templates`;
 
@@ -141,11 +142,13 @@ export function createAbilitySheet(Base) {
   const P = Base.PARTS ?? {};
   const parts = { header: P.header, tabs: P.tabs };
   if (P.description) parts.description = P.description;
+  parts.rolls = { template: `${T}/tab-rolls.hbs`, scrollable: [""] };
   parts.mechanics = { template: `${T}/tab-mechanics.hbs`, scrollable: [""] };
   if (P.effects) parts.effects = P.effects;
 
   const tabList = [];
   if (P.description) tabList.push({ id: "description", icon: "fa-solid fa-scroll", label: "ACKS.category.description" });
+  tabList.push({ id: "rolls", icon: "fa-solid fa-dice-d20", label: "ACKS-ABILITIES.tab.rolls" });
   tabList.push({ id: "mechanics", icon: "fa-solid fa-gears", label: "ACKS-ABILITIES.tab.mechanics" });
   if (P.effects) tabList.push({ id: "effects", icon: "fa-solid fa-sparkles", label: "ACKS.category.effects" });
 
@@ -186,6 +189,30 @@ export function createAbilitySheet(Base) {
           conditions: Array.from(d[k]?.conditions ?? []),
         }))
         .filter((r) => r.damage.length || r.effects.length || r.conditions.length);
+      // One row per roll the ability offers. A target that varies shows its
+      // whole ladder, because the number alone would be a lie at other ranks.
+      const scales = scalesFor(this.item.actor, this.item);
+      context.rollRows = (extras.rolls ?? []).map((r, i) => {
+        const key = r.key || `roll${i}`;
+        const target = targetOf(r, this.item.actor, this.item);
+        const bp = r.target?.breakpoints ?? [];
+        const varies = bp.length > 1;
+        const suffix = r.rollType === "below" ? "-" : r.rollType === "result" ? "" : "+";
+        return {
+          key,
+          label: r.label || game.i18n.localize("ACKS-ABILITIES.roll.unnamed"),
+          display: target == null ? (varies ? "—" : "?") : `${target}${suffix}`,
+          condition: r.condition,
+          ladder: varies
+            ? {
+                scaleLabel: V.VALUE_SCALES?.[r.scale]?.label ?? r.scale ?? "Level",
+                steps: bp.map((b) => b.atLevel),
+                values: bp.map((b) => `${b.value}${suffix}`),
+              }
+            : null,
+        };
+      });
+      context.scales = scales;
       context.libMissing = !globalThis.acksLib;
       // Converted content still imports; it just carries a notice. Removed-on-
       // purpose reads as a caution, merely-omitted as info, and a RENAME is
@@ -218,6 +245,15 @@ export function createAbilitySheet(Base) {
         return { token, label: owner?.name ?? slug };
       });
       return context;
+    }
+
+    /** @override */
+    _onRender(context, options) {
+      super._onRender?.(context, options);
+      const root = this.element instanceof HTMLElement ? this.element : this.element?.[0];
+      for (const b of root?.querySelectorAll(".acks-abilities-roll-go") ?? []) {
+        b.addEventListener("click", () => rollAbility(this.item, b.dataset.rollKey));
+      }
     }
 
     /**

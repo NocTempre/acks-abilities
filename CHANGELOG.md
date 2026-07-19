@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.0
+
+- **A Rolls tab.** An ability is not one roll — Animal Husbandry diagnoses,
+  cures, cures serious injury and extracts venom — and the core item carries a
+  single roll/target that can only hold one of them. Each roll an ability offers
+  now gets its own row and its own button, with its target resolved for the
+  character holding it and its whole progression shown when the target varies.
+- **Rank is understood.** Several proficiencies improve by how many times they
+  have been taken rather than by level; a copy on an actor resolves its rank
+  from how many of that ability the actor carries.
+- Rolling reports success only when a target is actually known. On a shared
+  world item there is no character to resolve a ladder against, so the roll
+  stands on its own rather than being scored against a guess.
+
 ## 0.3.2
 
 - **Modifier rows show their qualifier.** A bare "+4" claims a bonus always
