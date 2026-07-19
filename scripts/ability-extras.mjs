@@ -48,6 +48,12 @@ export default class AbilityExtras extends foundry.abstract.DataModel {
       // a capability are the same capability twice, so they do not stack.
       provides: refList(),
       requires: str(), // prerequisite marker (detail lives in the lazy description)
+      // The mechanics below are a MACHINE DRAFT: classified from the reader's
+      // book by a generic scan, not yet read against the page by a chef. A
+      // number's meaning is contextual — a smaller penalty is a bonus, an
+      // opponent's modifier is not yours — so until the cookbook entry carries
+      // its audit sign-off, the sheet says so and the printed text governs.
+      unaudited: bool(),
       // --- A pick-one branch (Combat Trickery maneuver, Elementalism element…) ---
       choice: new SchemaField({
         prompt: str(),

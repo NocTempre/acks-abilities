@@ -1,6 +1,12 @@
 <section class="tab acks-abilities-rolls" data-tab="rolls" data-group="primary">
 
   {{#if rollRows.length}}
+    {{#if extras.unaudited}}
+      <p class="notification info acks-abilities-notice" data-tooltip="{{localize 'ACKS-ABILITIES.warn.unauditedTip'}}">
+        <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+        {{localize "ACKS-ABILITIES.warn.unaudited"}}
+      </p>
+    {{/if}}
     <p class="hint">{{localize "ACKS-ABILITIES.roll.hint"}}</p>
     <ol class="acks-abilities-roll-list">
       {{#each rollRows}}

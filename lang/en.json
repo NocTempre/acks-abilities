@@ -21,6 +21,8 @@
   "ACKS-ABILITIES.warn.replacedBy": "Superseded by",
   "ACKS-ABILITIES.warn.aliasOf": "Its rules text is printed under",
   "ACKS-ABILITIES.warn.aliasTip": "A distinct ability that shares another entry's rules text. It does not stack with that entry.",
+  "ACKS-ABILITIES.warn.unaudited": "Machine-classified — not yet chef-audited.",
+  "ACKS-ABILITIES.warn.unauditedTip": "These mechanics were classified from your book by a generic scan and no one has verified them against the printed page. A number's meaning depends on its sentence, so treat values with care — the printed text is authoritative. The notice clears once the cookbook entry passes its audit.",
   "ACKS-ABILITIES.mech.replacedBy": "Replaced By",
   "ACKS-ABILITIES.mech.level": "Level",
   "ACKS-ABILITIES.mech.throw": "Throw",

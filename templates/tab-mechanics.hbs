@@ -19,6 +19,13 @@
     </p>
   {{/if}}
 
+  {{#if extras.unaudited}}
+    <p class="notification info acks-abilities-notice" data-tooltip="{{localize 'ACKS-ABILITIES.warn.unauditedTip'}}">
+      <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+      {{localize "ACKS-ABILITIES.warn.unaudited"}}
+    </p>
+  {{/if}}
+
   <fieldset>
     <legend>{{localize "ACKS-ABILITIES.mech.classification"}}</legend>
 
