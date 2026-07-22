@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.2
+
+- Add the `url` field to the manifest (GitHub repo link), matching the rest of
+  the family.
+
 ## 0.6.1
 
 - **Integration instructions.** The README documented installation and nothing
