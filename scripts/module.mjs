@@ -8,7 +8,7 @@
  * the effect vocabulary comes from acks-lib.
  */
 import { MODULE_ID, FLAG_EXTRAS, ABILITY_TYPE } from "./constants.mjs";
-import AbilityExtras from "./ability-extras.mjs";
+import AbilityExtras, { selectionsOf } from "./ability-extras.mjs";
 import { createAbilitySheet } from "./ability-sheet.mjs";
 import { rankOf, scalesFor, targetOf } from "./ability-rolls.mjs";
 
@@ -40,6 +40,11 @@ Hooks.once("init", () => {
     rankOf,
     scalesFor,
     targetOf,
+    // The picks a character's copy records (Martial Training's weapon group,
+    // Fighting Style Specialization's style, …). Reads the stored `selections`
+    // array and absorbs the legacy "(X)" name-suffix convention — consumers
+    // must never parse item names themselves.
+    selectionsOf,
     get AcksAbilitySheet() {
       return AcksAbilitySheet;
     },

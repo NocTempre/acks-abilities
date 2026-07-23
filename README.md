@@ -60,6 +60,29 @@ meaning will land — and where "an alias grants +1 rank to its root" will be
 applied. Calling it costs nothing now and keeps you correct later; reading
 `extras.qty` directly does not.
 
+### Selections — what each take chose
+
+For the list-expanding half of the table above, the pick itself is data:
+`extras.selections` is one string per take, order-aligned with `qty` —
+Martial Training's weapon group, Weapon Focus's category, a Fighting Style
+Specialization's style, Art's discipline. Rank-scaled abilities leave it
+empty. It lives only on a **character's copy**; definitions stay
+selection-free for the same reason they stay ownership-free.
+
+Read picks through the API, never by parsing names:
+
+```js
+const picks = api.selectionsOf(item); // ["Axes"] — [] when none recorded
+```
+
+`selectionsOf` also absorbs the legacy convention of carrying the pick as a
+"(X)" suffix on the item name (hand-made items, and the "(specialty)" suffix
+the acks-content ability-provider stamps), so it is the single place that
+interpretation lives. The vocabulary is deliberately free — the meaningful
+token set is per-ability and printed in the book — so normalize before
+matching (lowercase, alphanumeric fold), and treat an ability with takes but
+no recorded picks as **unselected**, not as having picked nothing.
+
 ### Scoping — when a modifier applies
 
 Whether a modifier applies to a *particular* roll (versus an alignment, within
@@ -78,7 +101,8 @@ classified. Offer those as a manual toggle.
 ### Stability
 
 `MODULE_ID`, `FLAG_EXTRAS`, `ABILITY_TYPE`, `getExtras`, `rankOf`,
-`scalesFor`, `targetOf` and `AbilityExtras` are the supported surface.
+`scalesFor`, `targetOf`, `selectionsOf` and `AbilityExtras` are the supported
+surface.
 Anything reached by importing `scripts/*.mjs` directly is internal and will
 move without notice.
 

@@ -18,7 +18,7 @@ import { ABILITY_CATEGORIES, CONVERSION_STATUS } from "../../acks-lib/scripts/vo
 
 export default class AbilityExtras extends foundry.abstract.DataModel {
   /** Array-valued paths, reconstructed from FormDataExtended's numeric-keyed objects. */
-  static ARRAY_PATHS = ["effects", "rolls", "choice.options"];
+  static ARRAY_PATHS = ["effects", "rolls", "choice.options", "selections"];
 
   static defineSchema() {
     const { SchemaField, ArrayField } = foundry.data.fields;
@@ -47,6 +47,26 @@ export default class AbilityExtras extends foundry.abstract.DataModel {
       // `qty + Σ(granted ranks)`, and the two numbers answer different
       // questions — "how often did you take it" vs "what does it read at".
       qty: num({ integer: true, initial: 1, min: 1 }),
+      // --- The picks: what each take CHOSE (the other half of qty) ---
+      // `qty` says how often the ability was taken; `selections` records what
+      // each take selected, for the list-expanding abilities where a take IS a
+      // choice: Weapon Focus's category, Martial Training's weapon group,
+      // Fighting Style Specialization's style, Art/Craft's discipline. One
+      // string per take, order-aligned with the count; rank-scaled abilities
+      // (where a second take deepens rather than widens) leave it empty.
+      //
+      // Free vocabulary BY DESIGN — the meaningful token set is per-ability
+      // (weapon groups for one, crafts for another) and lives in the book, so
+      // the schema cannot enumerate it. Consumers normalize (lowercase,
+      // alphanumeric fold) and match against their own vocabularies; they read
+      // through selectionsOf(), which also absorbs the legacy "(X)" name-suffix
+      // convention, so no consumer ever parses item names itself.
+      //
+      // Stored only on a CHARACTER'S copy. The definition side stays
+      // selection-free for the same reason it stays ownership-free (MODEL.md):
+      // the book defines the ability; who took it and what they picked is the
+      // character's data.
+      selections: new ArrayField(str()),
       powerValue: num(), // custom-power cost (0.5 / 1 / 1.5 / 2 / 3 / 5); powers only
       deprecated: bool(), // "removed from ACKS II" — still ingested, just flagged
       replacedBy: str(), // what supersedes it (a def id), so references can redirect
@@ -119,6 +139,29 @@ export default class AbilityExtras extends foundry.abstract.DataModel {
         foundry.utils.setProperty(data, path, Object.values(value));
       }
     }
+    // The sheet edits selections as one comma-separated line.
+    if (typeof data.selections === "string") {
+      data.selections = data.selections.split(",").map((s) => s.trim()).filter(Boolean);
+    }
     return AbilityExtras.fromSource(data, { strict: false }).toObject();
   }
+}
+
+/**
+ * The picks recorded on a character's copy of an ability — the ONLY supported
+ * way to read them (consumer contract, README). Prefers the stored
+ * `selections` array; absent that, absorbs the legacy convention of carrying
+ * the pick as a "(X)" suffix on the item name ("Martial Training (Axes)",
+ * and the "(specialty)" suffix the acks-content ability-provider stamps), so
+ * no consumer ever parses item names itself.
+ * @param {Item} item
+ * @returns {string[]} trimmed, non-empty picks; [] when none are recorded
+ */
+export function selectionsOf(item) {
+  const stored = (AbilityExtras.fromItem(item).selections ?? [])
+    .map((s) => String(s).trim())
+    .filter(Boolean);
+  if (stored.length) return stored;
+  const m = /\(([^)]+)\)\s*$/.exec(item?.name ?? "");
+  return m ? m[1].split(",").map((s) => s.trim()).filter(Boolean) : [];
 }

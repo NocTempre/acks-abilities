@@ -37,5 +37,8 @@
   "ACKS-ABILITIES.roll.target": "Target",
   "ACKS-ABILITIES.roll.noTarget": "No target on a shared item — open the copy on a character",
   "ACKS-ABILITIES.roll.success": "Success",
-  "ACKS-ABILITIES.roll.failure": "Failure"
+  "ACKS-ABILITIES.roll.failure": "Failure",
+  "ACKS-ABILITIES.mech.selections": "Selections",
+  "ACKS-ABILITIES.mech.selectionsPlaceholder": "e.g. Axes, Sword",
+  "ACKS-ABILITIES.mech.selectionsHint": "What each take chose, comma-separated and order-aligned with Times Taken - the weapon group, style, discipline, or other pick this ability spends its takes on. Leave blank for abilities where a repeat deepens a rank instead of widening a list."
 }

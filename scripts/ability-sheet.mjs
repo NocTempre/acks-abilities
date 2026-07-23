@@ -187,6 +187,8 @@ export function createAbilitySheet(Base) {
       // contradiction in the data, not a preference, so it is drawn as one
       // rather than sitting quietly in a number field nobody re-reads.
       context.qtyConflict = !extras.repeatable && Number(extras.qty) > 1;
+      // Selections edit as one comma-separated line (normalize() splits it).
+      context.selectionsCSV = (extras.selections ?? []).join(", ");
       context.choices = {
         category: V.choicesOf?.(V.ABILITY_CATEGORIES ?? {}) ?? {},
       };

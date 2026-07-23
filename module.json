@@ -2,8 +2,12 @@
   "id": "acks-abilities",
   "title": "ACKS II — Abilities",
   "description": "Extended effect model and sheet for ACKS proficiencies, class powers, skills, and monster abilities.",
-  "version": "0.6.2",
-  "authors": [{ "name": "NocTempre" }],
+  "version": "0.7.0",
+  "authors": [
+    {
+      "name": "NocTempre"
+    }
+  ],
   "license": "LICENSE",
   "compatibility": {
     "minimum": "14",
@@ -37,8 +41,12 @@
       "idPrefix": "acksAbil"
     }
   },
-  "esmodules": ["scripts/module.mjs"],
-  "styles": ["styles/module.css"],
+  "esmodules": [
+    "scripts/module.mjs"
+  ],
+  "styles": [
+    "styles/module.css"
+  ],
   "languages": [
     {
       "lang": "en",
