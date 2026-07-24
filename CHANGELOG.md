@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.1
+
+- `rankOf` now folds names with acks-lib's shared `slug` instead of a local
+  copy. Pure refactor — same rank counting, one fewer duplicate.
+
 ## 0.8.0
 
 **One roller, one store, three tabs.**

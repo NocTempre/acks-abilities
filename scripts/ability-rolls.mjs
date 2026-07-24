@@ -18,6 +18,7 @@
  * A shared world item has neither, so it shows the ladder instead of a number.
  */
 import { MODULE_ID } from "./constants.mjs";
+import { slug } from "../../acks-lib/scripts/vocab.mjs";
 
 /**
  * How many times an actor has this ability. The books rate several
@@ -27,9 +28,8 @@ import { MODULE_ID } from "./constants.mjs";
  */
 export function rankOf(actor, item) {
   if (!actor || !item) return 1;
-  const key = (s) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const mine = key(item.name);
-  const n = actor.items.filter((i) => i.type === item.type && key(i.name) === mine).length;
+  const mine = slug(item.name);
+  const n = actor.items.filter((i) => i.type === item.type && slug(i.name) === mine).length;
   return Math.max(1, n);
 }
 
