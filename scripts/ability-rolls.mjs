@@ -1,12 +1,17 @@
 /* global foundry, game, Roll, ChatMessage */
 /**
- * The roller behind the Rolls tab.
+ * The roller behind the Rolls tab — and, through roll-wrap.mjs, behind every
+ * other way the game rolls an ability.
  *
  * The core ability item carries ONE roll (formula, type, target). Most ACKS
  * proficiencies offer several: Animal Husbandry diagnoses, cures, cures serious
  * injury and extracts venom, three of those on their own rank ladder. So an
- * ability's rolls live in `flags["acks-abilities"].extras.rolls` and this
- * resolves and rolls whichever one was clicked.
+ * ability's rolls live in `flags["acks-abilities"].extras.rolls`.
+ *
+ * ONE STORE, ONE READ PATH. `rollsOf()` is the only place anything asks an
+ * ability what it rolls, and it folds core's singleton fields in on the way out
+ * — so an item this module has never migrated still presents the same shape,
+ * and roll #1 is not reached by different code than roll #3.
  *
  * Targets resolve against the CHARACTER, not the item: a rank ladder needs how
  * many times the proficiency was taken, a level ladder needs the actor's level.
@@ -48,6 +53,41 @@ export function targetOf(roll, actor, item) {
 }
 
 /**
+ * Every roll an ability offers — THE read path.
+ *
+ * Reads this module's store, and folds the core item's singleton fields in when
+ * that store is empty, so an ability nobody has migrated yet still answers in
+ * one shape. A core record sitting at its schema defaults (`1d20`, target 0) is
+ * NOT a roll: those are the initials the field ships with, not a throw anyone
+ * entered, and materializing them puts a meaningless d20 button on hundreds of
+ * proficiencies that make no throw at all.
+ *
+ * @param {Item} item
+ * @returns {object[]} rolls in presentation order (possibly empty)
+ */
+export function rollsOf(item) {
+  const stored = item?.getFlag(MODULE_ID, "extras")?.rolls ?? [];
+  if (stored.length) return stored;
+
+  const s = item?.system ?? {};
+  const hasTarget = Number(s.rollTarget ?? 0) !== 0;
+  const hasFormula = !!s.roll && s.roll !== "1d20";
+  if (!hasTarget && !hasFormula) return [];
+
+  return [
+    {
+      key: "primary",
+      label: "",
+      formula: s.roll || "1d20",
+      rollType: s.rollType || "above",
+      target: { kind: "flat", flat: Number(s.rollTarget ?? 0) },
+      scale: "level",
+      condition: "",
+    },
+  ];
+}
+
+/**
  * Roll one of an ability's rolls and post the result.
  *
  * Success is reported only when a target is known. On a shared world item there
@@ -55,8 +95,8 @@ export function targetOf(roll, actor, item) {
  * the result stands on its own rather than being scored against a guess.
  */
 export async function rollAbility(item, key) {
-  const extras = item?.getFlag(MODULE_ID, "extras") ?? {};
-  const roll = (extras.rolls ?? []).find((r) => r.key === key) ?? (extras.rolls ?? [])[0];
+  const rolls = rollsOf(item);
+  const roll = rolls.find((r) => r.key === key) ?? rolls[0];
   if (!roll) return null;
   const actor = item.actor ?? null;
   const target = targetOf(roll, actor, item);

@@ -2,7 +2,7 @@
   "id": "acks-abilities",
   "title": "ACKS II — Abilities",
   "description": "Extended effect model and sheet for ACKS proficiencies, class powers, skills, and monster abilities.",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "authors": [
     {
       "name": "NocTempre"
@@ -29,6 +29,14 @@
         "type": "module",
         "compatibility": {
           "minimum": "0.6.0"
+        }
+      },
+      {
+        "id": "lib-wrapper",
+        "type": "module",
+        "reason": "Wraps AcksItem#rollFormula and #getTags so every route into an ability's roll — character sheet, chat card, item.use(), macros — reaches all of its rolls, not just the first one core can store.",
+        "compatibility": {
+          "minimum": "1.12.0"
         }
       }
     ]

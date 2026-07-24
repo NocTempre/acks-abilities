@@ -158,4 +158,13 @@
     </fieldset>
   {{/if}}
 
+  {{! Foundry Active Effects. They had a tab of their own next to this one, both
+      called some variant of "effects" — a split that described the
+      implementation, not the ability. Same list, same controls, and the
+      system's own partial; it just lives here now. }}
+  <fieldset class="acks-abilities-active-effects">
+    <legend>{{localize "ACKS.category.effects"}}</legend>
+    {{> "systems/acks/templates/items/v2/common/item-active-effects.hbs"}}
+  </fieldset>
+
 </section>

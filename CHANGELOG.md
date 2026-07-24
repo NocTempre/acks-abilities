@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.8.0
+
+**One roller, one store, three tabs.**
+
+- **This module now owns core's ability roll path.** `AcksItem#rollFormula`
+  reads `system.roll` / `rollType` / `rollTarget` directly and can only ever
+  make one roll — so the character sheet, the chat card, `item.use()` and any
+  macro reached an ability's *first* throw while the Rolls tab showed all four.
+  `#rollFormula` and `#getTags` are wrapped (lib-wrapper, `ability` items only;
+  everything else falls through) and routed to the same `rollAbility()` the
+  sheet uses. New requirement: **lib-wrapper**.
+- **An ability with no throw now shows itself instead of rolling.** Core means
+  to do this — `use()` has the branch — but it tests `system.roll`, which
+  defaults to `"1d20"` and is always truthy, so proficiencies that make no
+  throw posted a d20 scored against a target of 0.
+- **`rollsOf(item)` is the single read path**, on the public API. It returns
+  this module's `extras.rolls`, folding core's singleton fields in for items it
+  has not written — so nothing needs migrating and nothing writes a shadow copy
+  back to core. A core record at its schema defaults is *not* a roll.
+- **Tags show every roll**, and a ladder with no character to resolve against
+  says so rather than printing the rung that happens to be first.
+- **Three tabs: description, rolls, mechanics.** The roll fields come off the
+  Description tab by swapping the details partial core resolves — core's
+  description template itself is reused untouched. Foundry's Active Effects
+  move into **Mechanics**, which previously sat beside a separate "Effects"
+  tab: two tabs both meaning "effects" described the implementation, not the
+  ability.
+
 ## 0.6.2
 
 - Add the `url` field to the manifest (GitHub repo link), matching the rest of

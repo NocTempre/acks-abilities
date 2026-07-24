@@ -10,7 +10,7 @@
  */
 import { MODULE_ID, FLAG_EXTRAS } from "./constants.mjs";
 import AbilityExtras from "./ability-extras.mjs";
-import { rollAbility, targetOf, scalesFor } from "./ability-rolls.mjs";
+import { rollAbility, rollsOf, targetOf, scalesFor } from "./ability-rolls.mjs";
 
 const T = `modules/${MODULE_ID}/templates`;
 
@@ -150,17 +150,27 @@ function describeEffect(e, V) {
  */
 export function createAbilitySheet(Base) {
   const P = Base.PARTS ?? {};
+  // THREE TABS, and each kind of thing lives on exactly one of them:
+  //   description  what the ability is — prose, citation, and the properties
+  //                that are not rolls (requirements, type, favourite)
+  //   rolls        every throw it offers
+  //   mechanics    everything that changes the game without being rolled — the
+  //                extended effect model AND Foundry's Active Effects
+  //
+  // The system's own `effects` part is folded into mechanics rather than kept
+  // as a fourth tab: two tabs both meaning "effects" was a distinction only the
+  // implementation cared about. Core's description part is reused as-is — only
+  // the details partial inside it is swapped (see _prepareDescriptionContext),
+  // so the roll fields come off Description without restating core's template.
   const parts = { header: P.header, tabs: P.tabs };
   if (P.description) parts.description = P.description;
   parts.rolls = { template: `${T}/tab-rolls.hbs`, scrollable: [""] };
   parts.mechanics = { template: `${T}/tab-mechanics.hbs`, scrollable: [""] };
-  if (P.effects) parts.effects = P.effects;
 
   const tabList = [];
   if (P.description) tabList.push({ id: "description", icon: "fa-solid fa-scroll", label: "ACKS.category.description" });
   tabList.push({ id: "rolls", icon: "fa-solid fa-dice-d20", label: "ACKS-ABILITIES.tab.rolls" });
   tabList.push({ id: "mechanics", icon: "fa-solid fa-gears", label: "ACKS-ABILITIES.tab.mechanics" });
-  if (P.effects) tabList.push({ id: "effects", icon: "fa-solid fa-sparkles", label: "ACKS.category.effects" });
 
   return class AcksAbilitySheet extends Base {
     static DEFAULT_OPTIONS = { classes: ["acks", "acks2", "item-v2", "acks-abilities"] };
@@ -214,8 +224,10 @@ export function createAbilitySheet(Base) {
         .filter((r) => r.damage.length || r.effects.length || r.conditions.length);
       // One row per roll the ability offers. A target that varies shows its
       // whole ladder, because the number alone would be a lie at other ranks.
+      // Read through rollsOf() — the single read path — so an ability whose
+      // roll still lives in core's singleton fields presents identically.
       const scales = scalesFor(this.item.actor, this.item);
-      context.rollRows = (extras.rolls ?? []).map((r, i) => {
+      context.rollRows = rollsOf(this.item).map((r, i) => {
         const key = r.key || `roll${i}`;
         const target = targetOf(r, this.item.actor, this.item);
         const bp = r.target?.breakpoints ?? [];
@@ -270,6 +282,45 @@ export function createAbilitySheet(Base) {
       return context;
     }
 
+    /**
+     * Swap the details partial the system's description tab renders.
+     *
+     * Core's `description.hbs` pulls in `details-<type>.hbs` through a context
+     * function, and for an ability that partial is mostly the roll block —
+     * formula, type, target, blind, save. Those belong on the Rolls tab with
+     * the ability's other throws; leaving the first one here made it look like
+     * the only one, and left a bare "1d20 / = / 0" on every proficiency that
+     * makes no throw at all.
+     *
+     * Only the pointer changes. Core's description template, its enrichment and
+     * everything else about the tab are reused untouched.
+     * @override
+     */
+    async _prepareDescriptionContext(context) {
+      const prepared = await super._prepareDescriptionContext(context);
+      prepared.getDetailsPartialPath = () => `${T}/details-ability.hbs`;
+      return prepared;
+    }
+
+    /**
+     * Foundry's Active Effects render INSIDE the mechanics tab, so the system's
+     * effects context has to be prepared for a part the system does not know
+     * carries them. Everything else defers to the system.
+     * @override
+     */
+    async _preparePartContext(partId, context, options) {
+      context = await super._preparePartContext(partId, context, options);
+      if (partId === "mechanics") {
+        context.tab = context.tabs[partId];
+        // Reuse the system's own preparation — the Active Effects list is its
+        // data, rendered through its partial, just on a different tab.
+        if (typeof this._prepareEffectsContext === "function") {
+          context = await this._prepareEffectsContext(context);
+        }
+      }
+      return context;
+    }
+
     /** @override */
     _onRender(context, options) {
       super._onRender?.(context, options);
@@ -290,6 +341,15 @@ export function createAbilitySheet(Base) {
       const raw = foundry.utils.getProperty(submitData, path);
       if (raw && typeof raw === "object") {
         const stored = foundry.utils.deepClone(this.item.getFlag(MODULE_ID, FLAG_EXTRAS) ?? {});
+        // The Rolls tab may be showing a roll that still lives in core's
+        // singleton fields — rollsOf() folded it for display. Seed the merge
+        // base with what was actually shown, so editing it MATERIALIZES it here
+        // instead of writing a half-row over an empty array and losing the
+        // fields the form did not render.
+        if (!(stored.rolls ?? []).length) {
+          const folded = rollsOf(this.item);
+          if (folded.length) stored.rolls = foundry.utils.deepClone(folded);
+        }
         const merged = foundry.utils.mergeObject(stored, raw, { inplace: false, overwrite: true, insertKeys: true });
         try {
           foundry.utils.setProperty(submitData, path, AbilityExtras.normalize(merged));

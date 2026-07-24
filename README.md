@@ -32,8 +32,24 @@ const extras = api.getExtras(item);                     // an AbilityExtras inst
 extras.category      // proficiency | classPower | skill | monsterAbility | …
 extras.general       // the "(G)" general-proficiency marker
 extras.effects       // typed acks-lib effect primitives
-extras.rolls         // every throw the ability offers, each with its own target
 ```
+
+### Rolls — always through `rollsOf`
+
+An ability is not one roll, but the core item can only store one. Never
+assemble an ability's throws from `system.roll` yourself: you will see one
+where the book prints four, and a rank ladder will read as its first rung.
+
+```js
+const rolls = api.rollsOf(item);          // every throw, in one shape
+await api.rollAbility(item, rolls[0].key); // roll one (omit key for the first)
+```
+
+`rollsOf` reads `extras.rolls` and folds core's singleton fields in for items
+this module has not written yet, so migrated and unmigrated abilities answer
+identically. It is also what the wrap on `AcksItem#rollFormula` uses, so
+`item.use()`, the chat card and a hotbar macro all reach the same rolls the
+sheet shows.
 
 ### `qty` is not the effective rank
 

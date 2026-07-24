@@ -10,7 +10,8 @@
 import { MODULE_ID, FLAG_EXTRAS, ABILITY_TYPE } from "./constants.mjs";
 import AbilityExtras, { selectionsOf } from "./ability-extras.mjs";
 import { createAbilitySheet } from "./ability-sheet.mjs";
-import { rankOf, scalesFor, targetOf } from "./ability-rolls.mjs";
+import { rankOf, scalesFor, targetOf, rollsOf, rollAbility } from "./ability-rolls.mjs";
+import { registerRollWrap } from "./roll-wrap.mjs";
 
 /** The dynamically-created sheet class (base is resolved at ready). */
 let AcksAbilitySheet = null;
@@ -40,6 +41,13 @@ Hooks.once("init", () => {
     rankOf,
     scalesFor,
     targetOf,
+    // Every roll an ability offers, in one shape — this module's store, with
+    // core's singleton folded in when it has not been edited here yet. THE read
+    // path: never assemble an ability's rolls from `system.roll` yourself, or
+    // you will see one throw where the book prints four.
+    rollsOf,
+    /** Roll one of them by key (omit the key for the first). */
+    rollAbility,
     // The picks a character's copy records (Martial Training's weapon group,
     // Fighting Style Specialization's style, …). Reads the stored `selections`
     // array and absorbs the legacy "(X)" name-suffix convention — consumers
@@ -58,7 +66,13 @@ Hooks.once("init", () => {
   }
   // Best-effort template preload (the base sheet's own parts preload with the system).
   try {
-    foundry.applications.handlebars.loadTemplates([`modules/${MODULE_ID}/templates/tab-mechanics.hbs`]);
+    foundry.applications.handlebars.loadTemplates([
+      `modules/${MODULE_ID}/templates/tab-mechanics.hbs`,
+      // Resolved dynamically by core's description.hbs, so it must be
+      // pre-registered — a partial reached through a context function is not
+      // discovered by the part loader.
+      `modules/${MODULE_ID}/templates/details-ability.hbs`,
+    ]);
   } catch (err) {
     console.warn(`${MODULE_ID} | template preload skipped`, err);
   }
@@ -81,6 +95,11 @@ Hooks.once("ready", () => {
     console.error(`${MODULE_ID} | could not resolve the acks ability sheet; ACKS Ability sheet NOT registered.`);
     return;
   }
+  // Core's ability roller reaches only the FIRST roll. Wrapping it is what
+  // makes the character sheet, the chat card and `item.use()` agree with this
+  // module's sheet instead of quietly rolling something else.
+  registerRollWrap();
+
   AcksAbilitySheet = createAbilitySheet(Base);
   // DEFAULT, because a sheet nobody selects shows nobody the mechanics — which
   // is the entire point of this module. Safe to default: it SUBCLASSES the
