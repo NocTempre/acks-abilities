@@ -71,11 +71,51 @@ Hooks.once("init", () => {
  * queue, so CONFIG.Item.sheetClasses is EMPTY during init and the system's
  * ability sheet — our base class — can only be resolved here.
  */
-Hooks.once("ready", () => {
+/**
+ * Move rolls out of this module's flag and into `system.rolls`.
+ *
+ * They lived in the flag because the core ability item could hold exactly one
+ * roll. It now holds all of them, so the flag copy is redundant — and a second
+ * copy of the same data is how the sheet and the roller came to disagree.
+ * Runs once per world: an item whose flag still carries rolls is rewritten, and
+ * the flag key is unset so it cannot drift again.
+ *
+ * Only fills `system.rolls` when it is EMPTY. If the system already holds rolls
+ * for that item, the system's copy is authoritative and the flag is discarded.
+ */
+async function migrateRollsToSystem() {
+  if (!game.user.isGM) return 0;
+
+  const stale = game.items.filter((i) => i.type === ABILITY_TYPE && (i.getFlag(MODULE_ID, FLAG_EXTRAS)?.rolls ?? []).length);
+  const embedded = game.actors.flatMap((a) =>
+    a.items.filter((i) => i.type === ABILITY_TYPE && (i.getFlag(MODULE_ID, FLAG_EXTRAS)?.rolls ?? []).length),
+  );
+
+  let moved = 0;
+  for (const item of [...stale, ...embedded]) {
+    const rolls = item.getFlag(MODULE_ID, FLAG_EXTRAS)?.rolls ?? [];
+    try {
+      // Write the rolls FIRST, then drop the flag copy — so an interrupted
+      // migration leaves the data duplicated (harmless, retried next load)
+      // rather than deleted.
+      if (!(item.system.rolls ?? []).length) await item.update({ "system.rolls": rolls });
+      await item.unsetFlag(MODULE_ID, `${FLAG_EXTRAS}.rolls`);
+      moved++;
+    } catch (err) {
+      console.warn(`${MODULE_ID} | could not move rolls for "${item.name}"`, err);
+    }
+  }
+  if (moved) console.log(`${MODULE_ID} | moved rolls into system.rolls on ${moved} item(s).`);
+  return moved;
+}
+
+Hooks.once("ready", async () => {
   if (game.system?.id !== "acks") {
     console.warn(`${MODULE_ID} | active system is not "acks"; the ACKS Ability sheet expects acks ability items.`);
     return;
   }
+  await migrateRollsToSystem();
+
   const Base = resolveAbilitySheetBase();
   if (!Base) {
     console.error(`${MODULE_ID} | could not resolve the acks ability sheet; ACKS Ability sheet NOT registered.`);

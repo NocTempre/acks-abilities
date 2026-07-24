@@ -1,35 +1,41 @@
-/* global foundry, game, Roll, ChatMessage */
 /**
- * The roller behind the Rolls tab.
+ * Roll helpers — now a THIN DELEGATION LAYER over the system.
  *
- * The core ability item carries ONE roll (formula, type, target). Most ACKS
- * proficiencies offer several: Animal Husbandry diagnoses, cures, cures serious
- * injury and extracts venom, three of those on their own rank ladder. So an
- * ability's rolls live in `flags["acks-abilities"].extras.rolls` and this
- * resolves and rolls whichever one was clicked.
+ * These used to be the module's own roll engine, because the core ability item
+ * carried exactly one roll (`roll` / `rollType` / `rollTarget`) and most ACKS
+ * proficiencies offer several. The system now stores every roll in
+ * `system.rolls` and resolves them itself, so there is one implementation and
+ * the module keeps only the published names pointing at it.
  *
- * Targets resolve against the CHARACTER, not the item: a rank ladder needs how
- * many times the proficiency was taken, a level ladder needs the actor's level.
- * A shared world item has neither, so it shows the ladder instead of a number.
+ * `rankOf`, `scalesFor` and `targetOf` remain on the public API (acks-equipment
+ * reads `rankOf` for Armor Training). `rollAbility` is gone: rolling goes
+ * through the item — `item.rollFormula({ key })`.
+ *
+ * @see foundryvtt-acks-core src/module/documents/item.mjs
+ * @see foundryvtt-acks-core src/module/data/common/level-value.mjs
  */
-import { MODULE_ID } from "./constants.mjs";
 
 /**
  * How many times an actor has this ability. The books rate several
  * proficiencies by rank ("if the character selects Animal Husbandry twice…"),
  * and taking it twice is how you hold rank 2 — so rank is the count of
  * same-named ability items the actor carries.
+ *
+ * Delegates to the system's own `item.rank`. The fallback covers a system too
+ * old to define it; it is the same rule, not a second policy.
  */
 export function rankOf(actor, item) {
   if (!actor || !item) return 1;
-  const key = (s) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const mine = key(item.name);
-  const n = actor.items.filter((i) => i.type === item.type && key(i.name) === mine).length;
-  return Math.max(1, n);
+  if (actor === item.actor && typeof item.rank === "number") return item.rank;
+
+  const slug = (s) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const mine = slug(item.name);
+  return Math.max(1, actor.items.filter((i) => i.type === item.type && slug(i.name) === mine).length);
 }
 
 /** The scales a target may be keyed on, for this actor holding this item. */
 export function scalesFor(actor, item) {
+  if (actor && actor === item?.actor && item.rollScales) return item.rollScales;
   return {
     level: Number(actor?.system?.details?.level ?? actor?.system?.level ?? 1) || 1,
     rank: rankOf(actor, item),
@@ -38,47 +44,13 @@ export function scalesFor(actor, item) {
 
 /**
  * Resolve a roll's target number, or null when it cannot be known here.
- * Delegates to acks-lib so the ladder semantics have one definition.
+ *
+ * Prefers the system's resolver (exposed at `game.acks.lib`), then acks-lib's
+ * own — they are the same function, the system's copy being the upstreamed one.
  */
 export function targetOf(roll, actor, item) {
-  const resolve = globalThis.acksLib?.resolveLevelValue;
+  const resolve = globalThis.game?.acks?.lib?.resolveLevelValue ?? globalThis.acksLib?.resolveLevelValue;
   if (!resolve) return roll?.target?.flat ?? null;
   const scales = scalesFor(actor, item);
   return resolve(roll?.target, scales.level, scales);
-}
-
-/**
- * Roll one of an ability's rolls and post the result.
- *
- * Success is reported only when a target is known. On a shared world item there
- * is no character to resolve a ladder against, so the roll still happens and
- * the result stands on its own rather than being scored against a guess.
- */
-export async function rollAbility(item, key) {
-  const extras = item?.getFlag(MODULE_ID, "extras") ?? {};
-  const roll = (extras.rolls ?? []).find((r) => r.key === key) ?? (extras.rolls ?? [])[0];
-  if (!roll) return null;
-  const actor = item.actor ?? null;
-  const target = targetOf(roll, actor, item);
-
-  const evaluated = await new Roll(roll.formula || "1d20").evaluate();
-  const type = roll.rollType || "above";
-  const total = evaluated.total;
-  const success = target == null ? null : type === "below" ? total <= target : type === "result" ? total === target : total >= target;
-
-  const label = [item.name, roll.label].filter(Boolean).join(" — ");
-  const targetText =
-    target == null
-      ? game.i18n.localize("ACKS-ABILITIES.roll.noTarget")
-      : `${game.i18n.localize("ACKS-ABILITIES.roll.target")} ${target}${type === "above" ? "+" : type === "below" ? "-" : ""}`;
-  const verdict =
-    success == null ? "" : success ? game.i18n.localize("ACKS-ABILITIES.roll.success") : game.i18n.localize("ACKS-ABILITIES.roll.failure");
-
-  await evaluated.toMessage({
-    speaker: ChatMessage.getSpeaker({ actor }),
-    flavor: `${foundry.utils.escapeHTML?.(label) ?? label}<br><span class="acks-abilities-roll-target">${targetText}${
-      verdict ? ` — <strong>${verdict}</strong>` : ""
-    }</span>${roll.condition ? `<br><em>${foundry.utils.escapeHTML?.(roll.condition) ?? roll.condition}</em>` : ""}`,
-  });
-  return { total, target, success };
 }

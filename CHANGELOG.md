@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.8.0
+
+**Rolls moved to the system, and the sheet is three tabs.**
+
+- **`extras.rolls` is gone; rolls live in `item.system.rolls`.** They were in
+  this module's flag because the core ability item could hold exactly one roll
+  (`roll` / `rollType` / `rollTarget`) and most ACKS proficiencies offer
+  several. The system now stores every roll, so keeping a second copy here
+  meant the sheet, the roller and the importer each had to pick a side. Worlds
+  migrate automatically at first load; a player who edits before the GM logs in
+  has their rolls carried over rather than dropped.
+- **`rollAbility()` is removed.** Roll through the item: `item.rollFormula({ key })`.
+  One implementation now serves every roll — the first is not a special case.
+- **`rankOf`, `scalesFor` and `targetOf` stay on the API** but are thin wrappers
+  over the system's `item.rank` / `item.rollScales` / `item.rollTargetOf`.
+- **Three tabs: description, rolls, mechanics.** The Rolls tab is the system's
+  own part, reused verbatim — this module no longer ships a rolls template.
+  Foundry's Active Effects moved into **Mechanics**, which previously sat next
+  to a separate "Effects" tab: two tabs both meaning "effects" was a split that
+  described the implementation, not the ability.
+
+Requires a system providing `system.rolls` and a rolls sheet part. On an older
+system the sheet degrades to description + mechanics rather than growing a
+second roll implementation.
+
 ## 0.6.2
 
 - Add the `url` field to the manifest (GitHub repo link), matching the rest of

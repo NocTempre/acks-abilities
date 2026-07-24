@@ -2,15 +2,25 @@
 /**
  * The ACKS Abilities sheet is built at ready as a SUBCLASS of the system's own
  * registered `ability` item sheet, so it inherits the header, description and
- * Active Effects tabs verbatim and adds one **Mechanics** tab for the extended
+ * **Rolls** tabs verbatim and adds one **Mechanics** tab for the extended
  * effect model (`flags["acks-abilities"].extras`).
  *
- * NOTE the tab id is `mechanics`, not `effects` — the system already uses
- * `effects` for Foundry Active Effects, which are a different thing entirely.
+ * THREE TABS, and each kind of thing lives on exactly one of them:
+ *
+ *   description   what the ability is (prose + citation)
+ *   rolls         every throw it offers — the SYSTEM's `system.rolls`, rendered
+ *                 by the system's own part. This module no longer ships a rolls
+ *                 template or a roller: an ability's first roll and its fourth
+ *                 went through different code once, and that is exactly the
+ *                 split this removes.
+ *   mechanics     everything that changes the game without being rolled — the
+ *                 extended effect model AND Foundry's Active Effects, which
+ *                 used to sit on a separate "Effects" tab. Two tabs both
+ *                 meaning "effects" was a distinction only the implementation
+ *                 cared about.
  */
 import { MODULE_ID, FLAG_EXTRAS } from "./constants.mjs";
 import AbilityExtras from "./ability-extras.mjs";
-import { rollAbility, targetOf, scalesFor } from "./ability-rolls.mjs";
 
 const T = `modules/${MODULE_ID}/templates`;
 
@@ -152,15 +162,15 @@ export function createAbilitySheet(Base) {
   const P = Base.PARTS ?? {};
   const parts = { header: P.header, tabs: P.tabs };
   if (P.description) parts.description = P.description;
-  parts.rolls = { template: `${T}/tab-rolls.hbs`, scrollable: [""] };
+  // The system's own rolls part, used verbatim. If a system this old lacks one,
+  // there is no rolls tab rather than a second implementation of it.
+  if (P.rolls) parts.rolls = P.rolls;
   parts.mechanics = { template: `${T}/tab-mechanics.hbs`, scrollable: [""] };
-  if (P.effects) parts.effects = P.effects;
 
   const tabList = [];
   if (P.description) tabList.push({ id: "description", icon: "fa-solid fa-scroll", label: "ACKS.category.description" });
-  tabList.push({ id: "rolls", icon: "fa-solid fa-dice-d20", label: "ACKS-ABILITIES.tab.rolls" });
+  if (P.rolls) tabList.push({ id: "rolls", icon: "fa-solid fa-dice-d20", label: "ACKS.category.rolls" });
   tabList.push({ id: "mechanics", icon: "fa-solid fa-gears", label: "ACKS-ABILITIES.tab.mechanics" });
-  if (P.effects) tabList.push({ id: "effects", icon: "fa-solid fa-sparkles", label: "ACKS.category.effects" });
 
   return class AcksAbilitySheet extends Base {
     static DEFAULT_OPTIONS = { classes: ["acks", "acks2", "item-v2", "acks-abilities"] };
@@ -212,30 +222,8 @@ export function createAbilitySheet(Base) {
           conditions: Array.from(d[k]?.conditions ?? []),
         }))
         .filter((r) => r.damage.length || r.effects.length || r.conditions.length);
-      // One row per roll the ability offers. A target that varies shows its
-      // whole ladder, because the number alone would be a lie at other ranks.
-      const scales = scalesFor(this.item.actor, this.item);
-      context.rollRows = (extras.rolls ?? []).map((r, i) => {
-        const key = r.key || `roll${i}`;
-        const target = targetOf(r, this.item.actor, this.item);
-        const bp = r.target?.breakpoints ?? [];
-        const varies = bp.length > 1;
-        const suffix = r.rollType === "below" ? "-" : r.rollType === "result" ? "" : "+";
-        return {
-          key,
-          label: r.label || game.i18n.localize("ACKS-ABILITIES.roll.unnamed"),
-          display: target == null ? (varies ? "—" : "?") : `${target}${suffix}`,
-          condition: r.condition,
-          ladder: varies
-            ? {
-                scaleLabel: V.VALUE_SCALES?.[r.scale]?.label ?? r.scale ?? "Level",
-                steps: bp.map((b) => b.atLevel),
-                values: bp.map((b) => `${b.value}${suffix}`),
-              }
-            : null,
-        };
-      });
-      context.scales = scales;
+      // NOTE no rollRows here. The system builds them from `system.rolls` for
+      // its own rolls part, which this sheet reuses — see the class header.
       context.libMissing = !globalThis.acksLib;
       // Converted content still imports; it just carries a notice. Removed-on-
       // purpose reads as a caution, merely-omitted as info, and a RENAME is
@@ -270,13 +258,23 @@ export function createAbilitySheet(Base) {
       return context;
     }
 
-    /** @override */
-    _onRender(context, options) {
-      super._onRender?.(context, options);
-      const root = this.element instanceof HTMLElement ? this.element : this.element?.[0];
-      for (const b of root?.querySelectorAll(".acks-abilities-roll-go") ?? []) {
-        b.addEventListener("click", () => rollAbility(this.item, b.dataset.rollKey));
+    /**
+     * Foundry's Active Effects render INSIDE the mechanics tab, so the system's
+     * effects context has to be prepared for a part the system does not know
+     * carries them. Everything else defers to the system.
+     * @override
+     */
+    async _preparePartContext(partId, context, options) {
+      context = await super._preparePartContext(partId, context, options);
+      if (partId === "mechanics") {
+        context.tab = context.tabs[partId];
+        // Reuse the system's own preparation — the Active Effects list is its
+        // data, rendered through its partial, just on a different tab.
+        if (typeof this._prepareEffectsContext === "function") {
+          context = await this._prepareEffectsContext(context);
+        }
       }
+      return context;
     }
 
     /**
@@ -287,6 +285,16 @@ export function createAbilitySheet(Base) {
     _prepareSubmitData(event, form, formData, updateData) {
       const submitData = super._prepareSubmitData(event, form, formData, updateData);
       const path = `flags.${MODULE_ID}.${FLAG_EXTRAS}`;
+
+      // Rescue rolls the world migration has not moved yet. It runs at ready
+      // for the GM only, so a player editing an ability first would otherwise
+      // have them stripped here — `rolls` is no longer in the extras schema, so
+      // normalize() drops it. Carry them to system.rolls instead of losing them.
+      const orphaned = this.item.getFlag(MODULE_ID, FLAG_EXTRAS)?.rolls ?? [];
+      if (orphaned.length && !(this.item.system.rolls ?? []).length) {
+        foundry.utils.setProperty(submitData, "system.rolls", foundry.utils.deepClone(orphaned));
+      }
+
       const raw = foundry.utils.getProperty(submitData, path);
       if (raw && typeof raw === "object") {
         const stored = foundry.utils.deepClone(this.item.getFlag(MODULE_ID, FLAG_EXTRAS) ?? {});

@@ -32,8 +32,18 @@ const extras = api.getExtras(item);                     // an AbilityExtras inst
 extras.category      // proficiency | classPower | skill | monsterAbility | …
 extras.general       // the "(G)" general-proficiency marker
 extras.effects       // typed acks-lib effect primitives
-extras.rolls         // every throw the ability offers, each with its own target
 ```
+
+Rolls are **not** in this flag. Every throw an ability offers is system data:
+
+```js
+item.system.rolls                  // [{ key, label, formula, rollType, target, scale, … }]
+await item.rollFormula({ key });   // roll one of them; omit `key` for the first
+```
+
+They lived in `extras.rolls` only while the core item could hold a single roll.
+It now holds all of them, so there is one store and one roller — and no reason
+for an ability's first throw to behave differently from its fourth.
 
 ### `qty` is not the effective rank
 
@@ -54,6 +64,10 @@ const rank   = api.rankOf(actor, item);          // the ability's own rule
 const scales = api.scalesFor(actor, item);       // { level, rank }
 const target = api.targetOf(roll, actor, item);  // resolved throw target, or null
 ```
+
+These are now thin wrappers over the system's own `item.rank`, `item.rollScales`
+and `item.rollTargetOf()`. Keep calling them: the wrapper is where per-ability
+rank meaning will land, and it degrades gracefully on an older system.
 
 `rankOf` currently returns the count, but it is the place where per-ability
 meaning will land — and where "an alias grants +1 rank to its root" will be
