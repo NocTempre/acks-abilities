@@ -85,7 +85,7 @@ Hooks.once("init", () => {
  * queue, so CONFIG.Item.sheetClasses is EMPTY during init and the system's
  * ability sheet — our base class — can only be resolved here.
  */
-Hooks.once("ready", () => {
+Hooks.once("ready", async () => {
   if (game.system?.id !== "acks") {
     console.warn(`${MODULE_ID} | active system is not "acks"; the ACKS Ability sheet expects acks ability items.`);
     return;
@@ -94,6 +94,19 @@ Hooks.once("ready", () => {
   if (!Base) {
     console.error(`${MODULE_ID} | could not resolve the acks ability sheet; ACKS Ability sheet NOT registered.`);
     return;
+  }
+  // tab-mechanics.hbs folds the system's Active Effects block in via its
+  // partial — but a Handlebars partial only resolves once REGISTERED, and the
+  // system registers it lazily with its own sheets. Open an ability FIRST after
+  // a reload and the partial does not exist yet, so the sheet dies ("The partial
+  // ... could not be found"). Preload it ourselves; if a future system renames
+  // the file, degrade to rendering the tab without the block rather than break.
+  const AE_PARTIAL = "systems/acks/templates/items/v2/common/item-active-effects.hbs";
+  try {
+    await foundry.applications.handlebars.loadTemplates([AE_PARTIAL]);
+  } catch (err) {
+    globalThis.Handlebars?.registerPartial?.(AE_PARTIAL, "");
+    console.warn(`${MODULE_ID} | the system no longer ships ${AE_PARTIAL}; the Mechanics tab renders without the Active Effects block.`, err);
   }
   // Core's ability roller reaches only the FIRST roll. Wrapping it is what
   // makes the character sheet, the chat card and `item.use()` agree with this

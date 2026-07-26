@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.2
+
+- **Fix: ability sheets failed to open when an ability was the first item sheet
+  of the session.** The Mechanics tab folds in the system's Active Effects block
+  via a Handlebars partial the system only registers lazily with its own sheets —
+  open an ability before any other item after a reload and the partial did not
+  exist yet, so the sheet died with "The partial systems/acks/templates/items/v2/
+  common/item-active-effects.hbs could not be found". The module now preloads the
+  partial itself at ready; if a future system build renames that file, the tab
+  renders without the Active Effects block instead of breaking.
+
 ## 0.8.1
 
 - `rankOf` now folds names with acks-lib's shared `slug` instead of a local
