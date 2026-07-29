@@ -2,9 +2,29 @@
 
 /* Mechanics tab: structured effect rows */
 .acks-abilities-effects { list-style: none; margin: 0; padding: 0; }
-.acks-abilities-effects li { display: flex; gap: 0.5rem; align-items: baseline; padding: 2px 0; border-bottom: 1px solid rgba(0,0,0,0.08); }
+/* The row wraps so the scope controls sit on their own line under the summary
+   rather than squeezing the text that says what the effect is. */
+.acks-abilities-effects li { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; padding: 3px 0; border-bottom: 1px solid rgba(0,0,0,0.08); }
 .acks-abilities-effect-kind { flex: 0 0 auto; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.7; min-width: 7.5rem; }
 .acks-abilities-effect-text { flex: 1 1 auto; }
+
+/* A locally changed row must not read as the printed ruling — same reason the
+   unaudited banner exists. Marked with a rule down the side and a pen icon. */
+.acks-abilities-effects li.acks-abilities-overridden { border-left: 3px solid var(--color-warm-2, #a55); padding-left: 6px; margin-left: -9px; }
+.acks-abilities-override-mark { flex: 0 0 auto; opacity: 0.75; }
+
+/* Per-row scope controls: full width beneath the summary, quiet until used. */
+.acks-abilities-effect-scope { flex: 1 0 100%; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; padding: 2px 0 4px; }
+.acks-abilities-effect-scope label { display: flex; gap: 4px; align-items: center; font-size: 0.8rem; }
+.acks-abilities-effect-scope label > span { opacity: 0.7; }
+.acks-abilities-effect-scope input[type="text"] { flex: 1 1 12rem; min-width: 8rem; }
+.acks-abilities-effect-scope select { flex: 0 1 auto; }
+.acks-abilities-effect-scope .acks-abilities-always,
+.acks-abilities-effect-scope .acks-abilities-keep { flex: 0 0 auto; gap: 3px; }
+.acks-abilities-effect-scope input[type="checkbox"] { flex: 0 0 auto; margin: 0; }
+/* The higher edit level reads as a deliberate extra, not another field. */
+.acks-abilities-effect-scope .acks-abilities-keep > span { border-bottom: 1px dotted currentColor; cursor: help; }
+.acks-abilities-reset-override { flex: 0 0 auto; font-size: 0.75rem; line-height: 1.4; padding: 1px 6px; width: auto; }
 
 /* Capability tokens: compact chips, not a bulleted list. */
 .acks-abilities-caps {

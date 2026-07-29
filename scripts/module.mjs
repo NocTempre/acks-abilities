@@ -7,11 +7,15 @@
  * alternate ability sheet to view/edit it. Nothing mutates the acks system;
  * the effect vocabulary comes from acks-lib.
  */
-import { MODULE_ID, FLAG_EXTRAS, ABILITY_TYPE } from "./constants.mjs";
+import { MODULE_ID, LANG_PREFIX, FLAG_EXTRAS, ABILITY_TYPE, SETTING_ADVANCED_EDIT } from "./constants.mjs";
 import AbilityExtras, { selectionsOf } from "./ability-extras.mjs";
 import { createAbilitySheet } from "./ability-sheet.mjs";
 import { rankOf, scalesFor, targetOf, rollsOf, rollAbility } from "./ability-rolls.mjs";
 import { registerRollWrap } from "./roll-wrap.mjs";
+import {
+  FLAG_OVERRIDES, OVERRIDABLE_FIELDS, effectKey, keyedEffects, overridesOf,
+  applyOverrides, orphanedKeys, restoreEffect, registerOverrideGuard,
+} from "./effect-overrides.mjs";
 
 /** The dynamically-created sheet class (base is resolved at ready). */
 let AcksAbilitySheet = null;
@@ -24,6 +28,18 @@ function resolveAbilitySheetBase() {
 }
 
 Hooks.once("init", () => {
+  // The higher edit level. Editing an effect's scope needs no setting — it is
+  // an ordinary document change. This reveals the per-row control that decides
+  // a change should also SURVIVE re-import, which is a rarer and more
+  // consequential act and should not be one click away by default.
+  game.settings.register(MODULE_ID, SETTING_ADVANCED_EDIT, {
+    name: game.i18n.localize(`${LANG_PREFIX}.settings.advancedEdit`),
+    hint: game.i18n.localize(`${LANG_PREFIX}.settings.advancedEditHint`),
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: false,
+  });
   // Public API for consumer modules (acks-content writes this flag on import;
   // other modules read the effect model to drive automation).
   const api = {
@@ -53,6 +69,19 @@ Hooks.once("init", () => {
     // array and absorbs the legacy "(X)" name-suffix convention — consumers
     // must never parse item names themselves.
     selectionsOf,
+    // GM overrides on an effect's SCOPE — the always/conditional axis, and who
+    // it applies to. `extras.effects` always holds the effective values, so a
+    // consumer reading the flag as plain data (acks-influence does, on purpose)
+    // needs no change; these are for showing, resetting and auditing what was
+    // changed locally. See effect-overrides.mjs for why it works that way.
+    FLAG_OVERRIDES,
+    OVERRIDABLE_FIELDS,
+    effectKey,
+    keyedEffects,
+    overridesOf,
+    applyOverrides,
+    orphanedKeys,
+    restoreEffect,
     get AcksAbilitySheet() {
       return AcksAbilitySheet;
     },
@@ -112,6 +141,11 @@ Hooks.once("ready", async () => {
   // makes the character sheet, the chat card and `item.use()` agree with this
   // module's sheet instead of quietly rolling something else.
   registerRollWrap();
+  // Re-applies a GM's scope overrides to any write that replaces the effects
+  // array — acks-content's bulk Update regenerates all of them from the
+  // cookbook, and without this every local ruling would be silently reverted
+  // by a button whose whole job is to refresh abilities.
+  registerOverrideGuard();
 
   AcksAbilitySheet = createAbilitySheet(Base);
   // DEFAULT, because a sheet nobody selects shows nobody the mechanics — which

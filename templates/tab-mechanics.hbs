@@ -118,12 +118,26 @@
 
   <fieldset>
     <legend>{{localize "ACKS-ABILITIES.mech.effects"}}</legend>
+
+    {{#if orphanedOverrides.length}}
+      <p class="notification warning acks-abilities-notice"
+         data-tooltip="{{localize 'ACKS-ABILITIES.mech.orphanTip'}}">
+        <i class="fa-solid fa-unlink" aria-hidden="true"></i>
+        {{localize "ACKS-ABILITIES.mech.orphan"}}
+        {{#each orphanedOverrides}}<code>{{this}}</code> {{/each}}
+      </p>
+    {{/if}}
+
     {{#if effectRows.length}}
       <ol class="acks-abilities-effects">
         {{#each effectRows}}
-          <li>
+          <li{{#if this.overridden}} class="acks-abilities-overridden"{{/if}}>
             <span class="acks-abilities-effect-kind">{{this.kind}}</span>
             <span class="acks-abilities-effect-text">{{this.text}}</span>
+            {{#if this.overridden}}
+              <i class="fa-solid fa-user-pen acks-abilities-override-mark" aria-hidden="true"
+                 data-tooltip="{{localize 'ACKS-ABILITIES.mech.overriddenTip'}}"></i>
+            {{/if}}
             {{#if this.ladder}}
               <div class="acks-abilities-ladder-wrap">
                 <table class="acks-abilities-ladder">
@@ -132,9 +146,50 @@
                 </table>
               </div>
             {{/if}}
+
+            {{!-- The always/conditional axis. Tick Always and the effect
+                  applies unconditionally; untick it and say when. Only WHEN
+                  and TO WHOM are editable here — a value or a target is what
+                  the book says the ability DOES, and changing that is
+                  authoring a different ability, which belongs in the cookbook. --}}
+            <div class="acks-abilities-effect-scope">
+              <label class="acks-abilities-always">
+                <input type="checkbox" class="acks-abilities-always-toggle" {{checked this.always}}>
+                <span>{{localize "ACKS-ABILITIES.mech.always"}}</span>
+              </label>
+              <label>
+                <span>{{localize "ACKS-ABILITIES.mech.when"}}</span>
+                <input type="text" name="{{@root.o}}.{{this.key}}.set.condition" value="{{this.condition}}"
+                       placeholder="{{localize 'ACKS-ABILITIES.mech.whenAlways'}}">
+              </label>
+              <label>
+                <span>{{localize "ACKS-ABILITIES.mech.appliesTo"}}</span>
+                <select name="{{@root.o}}.{{this.key}}.set.appliesTo">
+                  {{selectOptions @root.choices.appliesTo selected=this.appliesTo}}
+                </select>
+              </label>
+
+              {{!-- The higher edit level: decided per row, off by default, and
+                    shown only to a user who has asked to see it. --}}
+              {{#if @root.advancedEdit}}
+                <label class="acks-abilities-keep">
+                  <input type="checkbox" name="{{@root.o}}.{{this.key}}.keep" {{checked this.overridden}}>
+                  <span data-tooltip="{{localize 'ACKS-ABILITIES.mech.keepTip'}}">{{localize "ACKS-ABILITIES.mech.keep"}}</span>
+                </label>
+              {{/if}}
+
+              {{#if this.overridden}}
+                <button type="button" class="acks-abilities-reset-override" data-key="{{this.key}}"
+                        data-tooltip="{{localize 'ACKS-ABILITIES.mech.resetTip'}}">
+                  <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+                  {{localize "ACKS-ABILITIES.mech.reset"}}
+                </button>
+              {{/if}}
+            </div>
           </li>
         {{/each}}
       </ol>
+      <p class="hint">{{localize "ACKS-ABILITIES.mech.scopeHint"}}</p>
     {{else}}
       <p class="hint">{{localize "ACKS-ABILITIES.mech.noEffects"}}</p>
     {{/if}}

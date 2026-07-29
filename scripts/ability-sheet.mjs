@@ -10,6 +10,10 @@
  */
 import { MODULE_ID, FLAG_EXTRAS } from "./constants.mjs";
 import AbilityExtras from "./ability-extras.mjs";
+import {
+  FLAG_OVERRIDES, OVERRIDABLE_FIELDS, keyedEffects, overridesOf, orphanedKeys,
+  applyOverrides, effectiveField, restoreEffect, advancedEditEnabled,
+} from "./effect-overrides.mjs";
 import { rollAbility, rollsOf, targetOf, scalesFor } from "./ability-rolls.mjs";
 
 const T = `modules/${MODULE_ID}/templates`;
@@ -242,8 +246,29 @@ export function createAbilitySheet(Base) {
       context.choices = {
         category: V.choicesOf?.(V.ABILITY_CATEGORIES ?? {}) ?? {},
       };
-      context.effectRows = (extras.effects ?? []).map((e) => {
+      // Effects are shown WITH their keys so each row can be scoped by the GM.
+      // The stored effects already carry any override (the guard applies it on
+      // write), so the row text reads as the ability actually behaves; the
+      // record only says which rows were changed and what to restore.
+      // Records already made keep applying whether or not this user is showing
+      // the control that makes them — hiding a control must not revoke a
+      // decision someone else made.
+      const overrides = overridesOf(this.item);
+      context.o = `flags.${MODULE_ID}.${FLAG_OVERRIDES}`;
+      context.advancedEdit = advancedEditEnabled();
+      context.effectRows = keyedEffects(extras.effects ?? []).map(({ key, effect: e }) => {
         const row = describeEffect(e, V);
+        row.key = key;
+        // Marked only when this row was deliberately pinned. An ordinary edit
+        // is an ordinary document change, and a "this is not the book" badge
+        // on it would be noise.
+        row.overridden = !!overrides[key];
+        // The flip itself: blank scope means the effect always applies.
+        row.always = !(e.condition ?? "");
+        // The always/conditional axis, editable. Blank means always — which is
+        // why an override to "" is kept rather than treated as absent.
+        row.condition = e.condition ?? "";
+        row.appliesTo = e.appliesTo ?? "self";
         // Carry the whole ladder so the row can show every level, not a summary
         // that looks like the value only changes at a few of them.
         const bp = e.value?.breakpoints;
@@ -252,6 +277,10 @@ export function createAbilitySheet(Base) {
         }
         return row;
       });
+      context.choices.appliesTo = V.choicesOf?.(V.EFFECT_SUBJECTS ?? {}) ?? {};
+      // A record whose effect no longer exists. Surfaced, never dropped: a
+      // vanished ruling is the failure persist mode exists to prevent.
+      context.orphanedOverrides = orphanedKeys(extras.effects ?? [], overrides);
       const d = extras.defenses ?? {};
       context.defenseRows = ["immunities", "resistances", "susceptibilities"]
         .map((k) => ({
@@ -368,6 +397,45 @@ export function createAbilitySheet(Base) {
       for (const b of root?.querySelectorAll(".acks-abilities-roll-go") ?? []) {
         b.addEventListener("click", () => rollAbility(this.item, b.dataset.rollKey));
       }
+      for (const b of root?.querySelectorAll(".acks-abilities-reset-override") ?? []) {
+        b.addEventListener("click", () => this._resetOverride(b.dataset.key));
+      }
+      // "Always" is a view of the scope field, not a second source of truth:
+      // ticking it clears the scope, unticking it hands focus to the box so
+      // the next thing you do is say when. One value, two ways to reach it.
+      for (const box of root?.querySelectorAll(".acks-abilities-always-toggle") ?? []) {
+        box.addEventListener("change", () => {
+          const text = box.closest(".acks-abilities-effect-scope")?.querySelector('input[type="text"]');
+          if (!text) return;
+          if (box.checked) {
+            text.value = "";
+            text.dispatchEvent(new Event("change", { bubbles: true }));
+          } else {
+            text.focus();
+          }
+        });
+      }
+    }
+
+    /**
+     * Drop one row's override and put the cookbook's own values back.
+     *
+     * Written as a single update carrying both the shortened record and the
+     * restored effects: the guard would otherwise re-apply the override it is
+     * being asked to remove.
+     */
+    async _resetOverride(key) {
+      const record = overridesOf(this.item);
+      const entry = record[key];
+      if (!entry) return;
+      delete record[key];
+      const effects = keyedEffects(this.item.getFlag(MODULE_ID, FLAG_EXTRAS)?.effects ?? []).map(
+        ({ key: k, effect }) => (k === key ? restoreEffect(effect, entry) : effect),
+      );
+      await this.item.update({
+        [`flags.${MODULE_ID}.${FLAG_OVERRIDES}`]: { [`-=${key}`]: null, ...record },
+        [`flags.${MODULE_ID}.${FLAG_EXTRAS}.effects`]: effects,
+      });
     }
 
     /**
@@ -398,7 +466,78 @@ export function createAbilitySheet(Base) {
           foundry.utils.setProperty(submitData, path, merged);
         }
       }
+      this._foldOverrides(submitData);
       return submitData;
+    }
+
+    /**
+     * Write the per-row scope edits onto the effects being saved — and, only
+     * in persist mode, also record them so a later re-import keeps them.
+     *
+     * The edit itself always lands: changing a field changes the value, which
+     * is what editing a field should do. The RECORD is the opt-in half. A row
+     * is recorded only when it actually differs from what the cookbook
+     * generated, so the "this is a local ruling" marker stays meaningful
+     * instead of appearing on every effect the first time a sheet is saved.
+     */
+    _foldOverrides(submitData) {
+      const oPath = `flags.${MODULE_ID}.${FLAG_OVERRIDES}`;
+      const submitted = foundry.utils.getProperty(submitData, oPath);
+      if (!submitted || typeof submitted !== "object") return;
+      // The generated baseline: the stored effects with any EXISTING override
+      // undone via its `was`. Without this a row that was overridden once looks
+      // unchanged forever, and clearing the field could never reset it.
+      const previous = overridesOf(this.item);
+      const generated = new Map(
+        keyedEffects(this.item.getFlag(MODULE_ID, FLAG_EXTRAS)?.effects ?? []).map(({ key, effect }) => [
+          key,
+          previous[key] ? restoreEffect(effect, previous[key]) : effect,
+        ]),
+      );
+      const record = {};
+      const applied = {};
+      for (const [key, patch] of Object.entries(submitted)) {
+        const base = generated.get(key);
+        if (!base || !patch || typeof patch !== "object") continue; // a row that is no longer there
+        const set = {};
+        const was = {};
+        // The row's scope inputs live under `set`; `keep` sits beside them and
+        // is the pin, not a field of the effect.
+        const submittedFields = patch.set ?? {};
+        for (const field of OVERRIDABLE_FIELDS) {
+          if (!(field in submittedFields)) continue;
+          const generatedValue = effectiveField(base, field);
+          const value = submittedFields[field];
+          // Compared against what the field EFFECTIVELY is, not against
+          // undefined: a <select> always submits a value, and treating an
+          // absent `appliesTo` as different from a submitted "self" would
+          // stamp an override on every row of every sheet that is ever saved.
+          if (String(generatedValue) === String(value)) continue;
+          set[field] = value;
+          was[field] = generatedValue;
+        }
+        if (!Object.keys(set).length) continue;
+        applied[key] = { set, was };
+        // PER-EDIT, and off unless asked for: this row is only recorded as an
+        // import override when its pin is ticked. A previously pinned row stays
+        // pinned while the control is hidden, so a user working at the plain
+        // level cannot silently un-pin someone else's ruling.
+        const pinned = "keep" in patch ? !!patch.keep : !!previous[key];
+        if (pinned) record[key] = { set, was };
+      }
+      const ePath = `flags.${MODULE_ID}.${FLAG_EXTRAS}.effects`;
+      const effects = foundry.utils.getProperty(submitData, ePath);
+      if (Array.isArray(effects)) {
+        // Every edit lands on the effects — changing a field changes the value,
+        // pinned or not. Rebuilt from the generated baseline so clearing an
+        // edit restores the book's value rather than the last text typed.
+        const base = keyedEffects(effects).map(({ key, effect }) => generated.get(key) ?? effect);
+        foundry.utils.setProperty(submitData, ePath, applyOverrides(base, applied));
+      }
+      // Only pinned rows are recorded. An unpinned edit is an ordinary change
+      // that the next Update refreshes from the book, like every other
+      // generated value — which is the honest default.
+      foundry.utils.setProperty(submitData, oPath, record);
     }
   };
 }
