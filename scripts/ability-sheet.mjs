@@ -22,8 +22,20 @@ const T = `modules/${MODULE_ID}/templates`;
  */
 function refName(ref) {
   if (!ref) return ref;
-  const item = game.items?.find?.((i) => i.getFlag?.("acks-content", "cookbook")?.id === ref);
-  return item?.name ?? ref;
+  const match = (i) => i.getFlag?.("acks-content", "cookbook")?.id === ref;
+  const item = game.items?.find?.(match);
+  if (item) return item.name;
+  // acks-content can import into world compendiums instead of the sidebar, in
+  // which case `game.items` is empty and every relation rendered as a raw id.
+  // Only already-loaded packs are searched — this is a display nicety on a
+  // synchronous render path, so it must not await anything; an unopened pack
+  // still falls back to the id, exactly as before.
+  for (const pack of game.packs ?? []) {
+    if (pack.documentName !== "Item") continue;
+    const hit = pack.contents?.find?.(match);
+    if (hit) return hit.name;
+  }
+  return ref;
 }
 
 /**
@@ -47,7 +59,16 @@ function describeEffect(e, V) {
   const label = (enumObj, key) => enumObj?.[key]?.label ?? key ?? "";
   const lv = (v) => {
     if (!v) return null;
-    if (v.kind === "perLevel" && v.base != null) return `${v.base} (${v.per >= 0 ? "+" : ""}${v.per}/level)`;
+    if (v.kind === "perLevel" && v.base != null) {
+      // `base === per` is the "N per level" shape — the value IS N x level, so
+      // showing "0.5 (+0.5/level)" invites reading a +0.5 bonus at 1st level
+      // when the rule gives 1. Say what it multiplies, and say the rounding:
+      // "half class level (round up)" is the rule, "0.5" is not a bonus anyone
+      // ever applies.
+      const rounding = v.round ? ` ${label(V.VALUE_ROUNDING, v.round).toLowerCase()}` : "";
+      if (v.base === v.per) return `${v.base}/level${rounding}`;
+      return `${v.base} (${v.per >= 0 ? "+" : ""}${v.per}/level)${rounding}`;
+    }
     if (v.kind === "breakpoints" && v.breakpoints?.length) {
       // A ladder read off a printed PER-LEVEL table has a value for every level
       // in its range. Listing all fourteen inline is unreadable and, worse,
@@ -84,6 +105,25 @@ function describeEffect(e, V) {
         .filter(Boolean).join("; ");
       const amount = e.mode === "set" ? "" : ` ${signed(n)}`;
       return { kind: label(V.EFFECT_TYPES, e.type), text: `${subject}${label(V.MODIFIER_TARGETS, e.target)}${amount}${qual ? ` (${qual})` : ""}` };
+    }
+    case "attributeSubstitution": {
+      // Which score feeds the roll, not how much it adds — so there is no
+      // number to show, and a row that tried to print one would be wrong for
+      // every character.
+      const qual = [e.condition, e.notStacksWith?.length ? `does not stack with ${refs(e.notStacksWith)}` : ""]
+        .filter(Boolean).join("; ");
+      return {
+        kind: label(V.EFFECT_TYPES, e.type),
+        text: `${label(V.ATTRIBUTES, e.attribute)} instead of ${label(V.ATTRIBUTES, e.insteadOf)} on ${label(V.MODIFIER_TARGETS, e.target)}${qual ? ` (${qual})` : ""}`,
+      };
+    }
+    case "conditionRemove": {
+      const subject = e.appliesTo && e.appliesTo !== "self" ? `${label(V.EFFECT_SUBJECTS, e.appliesTo)}: ` : "";
+      const conds = [...(e.conditions ?? [])].map((c) => label(V.CONDITION_KEYS, c)).join(", ");
+      return {
+        kind: label(V.EFFECT_TYPES, e.type),
+        text: `${subject}cures ${conds || "—"}${e.condition ? ` (${e.condition})` : ""}`,
+      };
     }
     case "throw": {
       // A dense-ladder summary already reads "19+ at 1st to …" — appending the
