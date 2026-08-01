@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.1
+
+- **README: GM getting-started.** The four-step workflow (connect books →
+  import abilities → drag onto sheets → rolls resolve) and the list of
+  modules that consume the model. Documentation only — no runtime change.
+
 ## 0.10.0
 
 - **Selections are now a checkbox per canonical pick, with the free-text line as
