@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.11.0
+
+- **Roll Outcomes render on the Mechanics tab.** The new acks-lib `outcome`
+  effect ("on a roll of X, Y happens" — botch bands, below-half-target notice,
+  failure consequences) gets its own row: the trigger phrase leads with the
+  number read from your book ("natural 1–3: the trap is triggered"), variant
+  scoping and notes trail in the qualifier. An outcome whose number did not
+  materialize (no book connected) reads as *undecidable* rather than vanishing
+  — the rule's existence is not seat-dependent, only its number is.
+
 ## 0.10.1
 
 - **README: GM getting-started.** The four-step workflow (connect books →

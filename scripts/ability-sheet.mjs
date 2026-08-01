@@ -137,6 +137,28 @@ function describeEffect(e, V) {
       return { kind: label(V.EFFECT_TYPES, e.type), text: `${label(V.PROFICIENCY_DOMAINS, e.domain)} — ${label(V.PROFICIENCY_BREADTH, e.breadth)}${e.group ? ` (${e.group})` : ""}` };
     case "limitation":
       return { kind: label(V.EFFECT_TYPES, e.type), text: e.restriction || e.condition || "—" };
+    case "outcome": {
+      // "On a roll of X, Y happens." The trigger phrase leads with its number —
+      // that number came off the page, and an outcome whose number did not
+      // materialize (bookless seat) must read as undecidable, not as absent.
+      const when =
+        e.trigger === "naturalBand"
+          ? Number.isFinite(e.naturalMax)
+            ? `natural ${e.naturalMax === 1 ? "1" : `1–${e.naturalMax}`}`
+            : "natural roll in a band (number not materialized)"
+          : e.trigger === "belowFraction"
+            ? Number.isFinite(e.belowFraction)
+              ? `result below ${e.belowFraction === 0.5 ? "half" : e.belowFraction} the target`
+              : "result below a fraction of the target (number not materialized)"
+            : e.trigger === "failure"
+              ? "on failure"
+              : label(V.OUTCOME_TRIGGERS, e.trigger);
+      const qual = [e.condition, e.note].filter(Boolean).join("; ");
+      return {
+        kind: label(V.EFFECT_TYPES, e.type),
+        text: `${when}: ${e.consequence || "—"}${qual ? ` (${qual})` : ""}`,
+      };
+    }
     case "requires":
     case "grants":
       return { kind: label(V.EFFECT_TYPES, e.type), text: `${refs(e.refs) || refName(e.ref)}${e.choose ? ` (choose ${e.choose})` : ""}` };
