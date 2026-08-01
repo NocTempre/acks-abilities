@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.10.0
+
+- **Selections are now a checkbox per canonical pick, with the free-text line as
+  the fallback.** A weapon / armour / fighting-style proficiency shows a box for
+  each pick in acks-lib's shared `SELECTION_VOCAB` (the JJ pp. 290-291
+  class-build vocabulary) — tick what the character took. The comma-separated
+  line stays underneath for anything the shortlist does not name, so the field
+  keeps its free vocabulary. Stored picks are matched loosely (case and
+  punctuation folded), so an imported free-text "Swords" ticks the **Swords &
+  Daggers** box instead of sitting unmatched in the fallback, and the picks then
+  line up with the keys acks-lib's Follower Card strips match on — ticking a box
+  lights the matching pill.
+
 ## 0.8.2
 
 - **Fix: ability sheets failed to open when an ability was the first item sheet

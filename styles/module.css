@@ -92,3 +92,22 @@
   color: var(--color-level-error, #b60205);
   opacity: 1;
 }
+
+/* Selection picks: a checkbox per canonical pick (acks-lib SELECTION_VOCAB),
+   with the comma-separated line below as the fallback for anything else. */
+.acks-abilities-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin-bottom: 3px;
+}
+.acks-abilities-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+.acks-abilities-pick input {
+  margin: 0;
+}

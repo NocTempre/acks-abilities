@@ -237,8 +237,27 @@ export function createAbilitySheet(Base) {
       // contradiction in the data, not a preference, so it is drawn as one
       // rather than sitting quietly in a number field nobody re-reads.
       context.qtyConflict = !extras.repeatable && Number(extras.qty) > 1;
-      // Selections edit as one comma-separated line (normalize() splits it).
-      context.selectionsCSV = (extras.selections ?? []).join(", ");
+      // Selections: a checkbox per canonical pick for this category (acks-lib's
+      // SELECTION_VOCAB — the class-build shortlist), with the comma-separated
+      // line kept as the fallback for picks the shortlist does not name. A stored
+      // pick is matched loosely (case/punctuation folded), so imported free text
+      // like "Swords" ticks the Swords & Daggers box instead of sitting in the
+      // fallback and never matching anything.
+      const picks = (extras.selections ?? []).map((s) => String(s).trim()).filter(Boolean);
+      const vocab = (V.SELECTION_VOCAB ?? {})[extras.category] ?? null;
+      const fold = (s) => String(s ?? "").toLowerCase().replace(/[^a-z]/g, "");
+      const matched = new Set();
+      context.selectionOptions = vocab
+        ? Object.entries(vocab).map(([key, def]) => {
+            const hit = picks.find((p) => {
+              const f = fold(p);
+              return f === key || f.startsWith(key) || key.startsWith(f) || fold(def.label).includes(f);
+            });
+            if (hit) matched.add(hit);
+            return { key, label: def.label, checked: !!hit };
+          })
+        : [];
+      context.selectionsCSV = picks.filter((p) => !matched.has(p)).join(", ");
       context.choices = {
         category: V.choicesOf?.(V.ABILITY_CATEGORIES ?? {}) ?? {},
       };
@@ -390,7 +409,23 @@ export function createAbilitySheet(Base) {
           const folded = rollsOf(this.item);
           if (folded.length) stored.rolls = foundry.utils.deepClone(folded);
         }
+        // Ticked selection boxes are not form fields (they carry no name, so they
+        // cannot collide with the array path) — fold them into the free-text line
+        // here. Boxes first, in vocabulary order, then whatever the fallback line
+        // still holds; unticking a box therefore removes that pick.
+        const root = form instanceof HTMLElement ? form : this.element;
+        const boxes = [...(root?.querySelectorAll("[data-selection-pick]") ?? [])];
+        if (boxes.length) {
+          const picked = boxes.filter((b) => b.checked).map((b) => b.dataset.selectionPick);
+          const free = String(raw.selections ?? "")
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+          raw.selections = [...picked, ...free.filter((f) => !picked.includes(f))];
+        }
         const merged = foundry.utils.mergeObject(stored, raw, { inplace: false, overwrite: true, insertKeys: true });
+        // selections is authoritative from the form (an emptied list must stick).
+        if (Array.isArray(raw.selections)) merged.selections = raw.selections;
         try {
           foundry.utils.setProperty(submitData, path, AbilityExtras.normalize(merged));
         } catch (err) {
