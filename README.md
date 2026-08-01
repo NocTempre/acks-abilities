@@ -18,6 +18,32 @@ https://github.com/NocTempre/acks-abilities/releases/latest/download/module.json
 - Foundry VTT v14+
 - ACKS II system (`acks`) v14+
 
+## Getting started (GM workflow)
+
+This module is the **binding layer** for abilities: it gives every `ability`
+item a structured model — ranks, per-take selections, roll ladders, effect
+primitives — that the rest of the family reads. The content itself comes from
+**your own books**, via acks-content:
+
+1. Install **acks-content** and connect your ACKS II PDFs (per seat, never
+   uploaded).
+2. Run its **Import ALL Abilities** macro (or *Browse & Import* for a
+   selection) — proficiencies, class powers, and skills materialize as items
+   in the ACKS Cookbook folders, each carrying the ladders and effects
+   extracted from your copy of the book.
+3. **Drag** what a character has onto their sheet. Taking the same
+   proficiency again stacks it as a higher rank; the sheet's **Selections**
+   boxes record which pick each take chose (a weapon-proficiency group, a
+   fighting style, …) so other modules can act on it.
+4. The item's **Rolls tab** shows its throws; targets resolve from the
+   imported ladder at the owner's level wherever the book prints one.
+
+Who consumes the model today: **acks-equipment** (combat proficiencies feed
+loadout and roll automation), **acks-formation** (party Listen/Search/Bash/
+Track checks — its README says exactly what a member's sheet needs),
+**acks-influence** (social throws), **acks-henchmen** (hiring & loyalty
+effects).
+
 ## Integrating from another module
 
 The model lives on the item at `flags["acks-abilities"].extras`. **Read it
